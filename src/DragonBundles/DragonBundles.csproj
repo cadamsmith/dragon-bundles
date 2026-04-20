@@ -15,4 +15,16 @@
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
   </PropertyGroup>
 
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NUglify" Version="1.21.17" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="DragonBundles.Tests" />
+  </ItemGroup>
+
 </Project>

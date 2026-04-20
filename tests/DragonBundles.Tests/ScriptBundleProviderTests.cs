@@ -1,0 +1,110 @@
+using DragonBundles;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.FileProviders;
+using NSubstitute;
+
+namespace DragonBundles.Tests;
+
+public class ScriptBundleProviderTests : IDisposable
+{
+    readonly string _webRoot = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+
+    public ScriptBundleProviderTests() => Directory.CreateDirectory(_webRoot);
+    public void Dispose() => Directory.Delete(_webRoot, recursive: true);
+
+    ScriptBundleProvider MakeProvider(string envName)
+    {
+        IWebHostEnvironment? env = Substitute.For<IWebHostEnvironment>();
+        env.EnvironmentName.Returns(envName);
+        env.WebRootPath.Returns(_webRoot);
+        return new ScriptBundleProvider(env);
+    }
+
+    void WriteJsFile(string relativePath, string content)
+    {
+        string full = Path.Combine(_webRoot, relativePath.TrimStart('/'));
+        Directory.CreateDirectory(Path.GetDirectoryName(full)!);
+        File.WriteAllText(full, content);
+    }
+
+    [Fact]
+    public void Add_InProduction_MinifiesBundle()
+    {
+        WriteJsFile("/js/app.js", "function   hello()   {   return   'hi';   }");
+        ScriptBundleProvider provider = MakeProvider(Environments.Production);
+
+        provider.Add("app", "/js/app.js");
+
+        IFileInfo fileInfo = provider.GetFileInfo("/bundles/js/app.min.js");
+        using Stream stream = fileInfo.CreateReadStream();
+        string content = new StreamReader(stream).ReadToEnd();
+        Assert.NotEmpty(content);
+        Assert.DoesNotContain("   ", content);
+    }
+
+    [Fact]
+    public void Add_InDevelopment_DoesNotMinify()
+    {
+        WriteJsFile("/js/app.js", "function hello() { return 'hi'; }");
+        ScriptBundleProvider provider = MakeProvider(Environments.Development);
+
+        provider.Add("app", "/js/app.js");
+
+        IFileInfo fileInfo = provider.GetFileInfo("/bundles/js/app.min.js");
+        using Stream stream = fileInfo.CreateReadStream();
+        string content = new StreamReader(stream).ReadToEnd();
+        Assert.Empty(content);
+    }
+
+    [Fact]
+    public void GetUrl_ReturnsCorrectPath()
+    {
+        ScriptBundleProvider provider = MakeProvider(Environments.Production);
+        Assert.Equal("/bundles/js/app.min.js", provider.GetUrl("app"));
+    }
+
+    [Fact]
+    public void GetSourceUrls_ReturnsFiles_WhenBundleExists()
+    {
+        ScriptBundleProvider provider = MakeProvider(Environments.Development);
+        provider.Add("app", "/js/a.js", "/js/b.js");
+
+        List<string> urls = provider.GetSourceUrls("app");
+        Assert.Equal(["/js/a.js", "/js/b.js"], urls);
+    }
+
+    [Fact]
+    public void GetSourceUrls_ReturnsEmpty_WhenBundleNotFound()
+    {
+        ScriptBundleProvider provider = MakeProvider(Environments.Development);
+        Assert.Empty(provider.GetSourceUrls("missing"));
+    }
+
+    [Fact]
+    public void GetFileInfo_ReturnsFileInfo_WhenBundleExists()
+    {
+        WriteJsFile("/js/app.js", "var x=1;");
+        ScriptBundleProvider provider = MakeProvider(Environments.Production);
+        provider.Add("app", "/js/app.js");
+
+        IFileInfo fileInfo = provider.GetFileInfo("/bundles/js/app.min.js");
+        Assert.True(fileInfo.Exists);
+        Assert.Equal("app", fileInfo.Name);
+    }
+
+    [Fact]
+    public void GetFileInfo_ReturnsNotFound_WhenBundleNotFound()
+    {
+        ScriptBundleProvider provider = MakeProvider(Environments.Production);
+        IFileInfo fileInfo = provider.GetFileInfo("/bundles/js/missing.min.js");
+        Assert.False(fileInfo.Exists);
+    }
+
+    [Fact]
+    public void GetFileInfo_ReturnsNotFound_WhenPathOutsideBundleDirectory()
+    {
+        ScriptBundleProvider provider = MakeProvider(Environments.Production);
+        IFileInfo fileInfo = provider.GetFileInfo("/wwwroot/js/app.js");
+        Assert.False(fileInfo.Exists);
+    }
+}

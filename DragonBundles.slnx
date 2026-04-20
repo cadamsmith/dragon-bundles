@@ -1,5 +1,11 @@
 <Solution>
+  <Folder Name="/docs/">
+    <File Path="CLAUDE.md" />
+  </Folder>
   <Folder Name="/src/">
     <Project Path="src/DragonBundles/DragonBundles.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/DragonBundles.Tests/DragonBundles.Tests.csproj" />
   </Folder>
 </Solution>

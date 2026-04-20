@@ -1,0 +1,10 @@
+global using Microsoft.AspNetCore.Builder;
+global using Microsoft.Extensions.Hosting;
+global using Microsoft.AspNetCore.Hosting;
+global using Microsoft.AspNetCore.Razor.TagHelpers;
+global using Microsoft.AspNetCore.StaticFiles;
+global using Microsoft.Extensions.DependencyInjection;
+global using Microsoft.Extensions.FileProviders;
+global using Microsoft.Extensions.FileProviders.Composite;
+global using Microsoft.Extensions.Primitives;
+global using NUglify;
