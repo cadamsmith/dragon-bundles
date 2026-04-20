@@ -5,9 +5,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 ```bash
-dotnet build          # build the solution
-dotnet test           # run tests (no test project yet)
-dotnet pack           # produce the NuGet .nupkg
+dotnet build                                        # build the solution
+dotnet test                                         # run all tests
+dotnet test --filter "FullyQualifiedName~StyleBundle"  # run a single test class
+dotnet pack                                         # produce the NuGet .nupkg
 ```
 
 ## Architecture
@@ -52,6 +53,13 @@ BundleConfigurator : IBundleConfigurator
 ### Minification
 
 Uses **NUglify** (`Uglify.Css` / `Uglify.Js`). Source files are read from `env.WebRootPath` (injected `IWebHostEnvironment`).
+
+### Tests
+
+Tests live in `tests/DragonBundles.Tests/`. Internal types are exposed via `InternalsVisibleTo` in the main `.csproj`. NSubstitute is used to mock `IWebHostEnvironment`.
+
+- `StyleBundleProviderTests` / `ScriptBundleProviderTests` — provider logic (minification, `GetUrl`, `GetFileInfo`, etc.). Tests that write files use a per-test temp directory cleaned up via `IDisposable`.
+- `StyleTagHelperTests` / `ScriptTagHelperTests` — tag helper HTML output in dev vs production. Use real `TagHelperContext`/`TagHelperOutput` — no mocking needed.
 
 ### Target framework
 
