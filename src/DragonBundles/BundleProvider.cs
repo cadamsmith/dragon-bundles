@@ -35,6 +35,16 @@ public abstract class BundleProvider<T>(IWebHostEnvironment env, string bundleDi
             : baseUrl;
     }
 
+    protected string ReadSourceFiles(Bundle bundle) =>
+        string.Join(Environment.NewLine, bundle.SourceFiles.Select(f =>
+        {
+            string path = Path.Combine(WebRootPath, f.TrimStart('/'));
+            if (!File.Exists(path))
+                throw new FileNotFoundException(
+                    $"Bundle '{bundle.Name}': source file '{f}' not found.", path);
+            return File.ReadAllText(path);
+        }));
+
     List<string> ResolveSourceUrls(string[] patterns)
     {
         var result = new List<string>();

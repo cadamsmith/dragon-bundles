@@ -84,6 +84,13 @@ public class ScriptBundleProviderTests : IDisposable
     }
 
     [Fact]
+    public void Add_InProduction_ThrowsWhenSourceFileNotFound()
+    {
+        ScriptBundleProvider provider = MakeProvider(Environments.Production);
+        Assert.Throws<FileNotFoundException>(() => provider.Add("app", "/js/missing.js"));
+    }
+
+    [Fact]
     public void Add_WithGlobPattern_ExpandsToMatchingFiles()
     {
         WriteJsFile("/js/a.js", "var a = 1;");

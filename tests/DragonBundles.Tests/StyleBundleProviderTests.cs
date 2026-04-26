@@ -87,6 +87,13 @@ public class StyleBundleProviderTests : IDisposable
     }
 
     [Fact]
+    public void Add_InProduction_ThrowsWhenSourceFileNotFound()
+    {
+        StyleBundleProvider provider = MakeProvider(Environments.Production);
+        Assert.Throws<FileNotFoundException>(() => provider.Add("site", "/css/missing.css"));
+    }
+
+    [Fact]
     public void Add_WithGlobPattern_ExpandsToMatchingFiles()
     {
         WriteCssFile("/css/a.css", "body {}");

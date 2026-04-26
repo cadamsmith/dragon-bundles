@@ -7,13 +7,7 @@ public class StyleBundleProvider(IWebHostEnvironment env) : BundleProvider<Style
 
     public override void Minify(StyleBundle bundle)
     {
-        string webRoot = WebRootPath;
-        string raw = string.Join(Environment.NewLine, bundle.SourceFiles
-            .Select(f => Path.Combine(webRoot, f.TrimStart('/')))
-            .Where(File.Exists)
-            .Select(File.ReadAllText));
-
-        bundle.MinifiedContent = Uglify.Css(raw).Code;
+        bundle.MinifiedContent = Uglify.Css(ReadSourceFiles(bundle)).Code;
         bundle.LastModified = DateTime.UtcNow;
     }
 }
