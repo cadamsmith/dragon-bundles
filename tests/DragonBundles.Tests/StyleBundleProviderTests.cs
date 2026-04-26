@@ -87,6 +87,34 @@ public class StyleBundleProviderTests : IDisposable
     }
 
     [Fact]
+    public void Add_WithGlobPattern_ExpandsToMatchingFiles()
+    {
+        WriteCssFile("/css/a.css", "body {}");
+        WriteCssFile("/css/b.css", "h1 {}");
+        StyleBundleProvider provider = MakeProvider(Environments.Development);
+
+        provider.Add("site", "/css/*.css");
+
+        Assert.Equal(["/css/a.css", "/css/b.css"], provider.GetSourceUrls("site"));
+    }
+
+    [Fact]
+    public void Add_InProduction_WithGlobPattern_MinifiesAllMatchingFiles()
+    {
+        WriteCssFile("/css/a.css", "body { color: red; }");
+        WriteCssFile("/css/b.css", "h1 { font-size: 24px; }");
+        StyleBundleProvider provider = MakeProvider(Environments.Production);
+
+        provider.Add("site", "/css/*.css");
+
+        IFileInfo fileInfo = provider.GetFileInfo("/bundles/css/site.min.css");
+        using Stream stream = fileInfo.CreateReadStream();
+        string content = new StreamReader(stream).ReadToEnd();
+        Assert.Contains("color", content);
+        Assert.Contains("font-size", content);
+    }
+
+    [Fact]
     public void GetSourceUrls_ReturnsFiles_WhenBundleExists()
     {
         StyleBundleProvider provider = MakeProvider(Environments.Development);

@@ -15,7 +15,7 @@ public abstract class BundleProvider<T>(IWebHostEnvironment env, string bundleDi
 
     public void Add(string name, params string[] files)
     {
-        T bundle = Create(name, [.. files]);
+        T bundle = Create(name, ResolveSourceUrls(files));
 
         if (!_isDevelopment)
         {
@@ -33,6 +33,27 @@ public abstract class BundleProvider<T>(IWebHostEnvironment env, string bundleDi
         return _bundles.TryGetValue(name, out T? bundle) && bundle.Version.Length > 0
             ? $"{baseUrl}?v={bundle.Version}"
             : baseUrl;
+    }
+
+    List<string> ResolveSourceUrls(string[] patterns)
+    {
+        var result = new List<string>();
+        foreach (string pattern in patterns)
+        {
+            if (!pattern.Contains('*') && !pattern.Contains('?'))
+            {
+                result.Add(pattern);
+                continue;
+            }
+
+            var matcher = new Matcher();
+            matcher.AddInclude(pattern.TrimStart('/'));
+            PatternMatchingResult matchResult = matcher.Execute(
+                new DirectoryInfoWrapper(new DirectoryInfo(WebRootPath)));
+            foreach (FilePatternMatch file in matchResult.Files.OrderBy(f => f.Path))
+                result.Add("/" + file.Path.Replace('\\', '/'));
+        }
+        return result;
     }
 
     static string ComputeVersion(string content)

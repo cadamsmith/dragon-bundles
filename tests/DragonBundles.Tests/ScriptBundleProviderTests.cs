@@ -84,6 +84,34 @@ public class ScriptBundleProviderTests : IDisposable
     }
 
     [Fact]
+    public void Add_WithGlobPattern_ExpandsToMatchingFiles()
+    {
+        WriteJsFile("/js/a.js", "var a = 1;");
+        WriteJsFile("/js/b.js", "var b = 2;");
+        ScriptBundleProvider provider = MakeProvider(Environments.Development);
+
+        provider.Add("app", "/js/*.js");
+
+        Assert.Equal(["/js/a.js", "/js/b.js"], provider.GetSourceUrls("app"));
+    }
+
+    [Fact]
+    public void Add_InProduction_WithGlobPattern_MinifiesAllMatchingFiles()
+    {
+        WriteJsFile("/js/a.js", "function hello() { return 'hi'; }");
+        WriteJsFile("/js/b.js", "var x = 1;");
+        ScriptBundleProvider provider = MakeProvider(Environments.Production);
+
+        provider.Add("app", "/js/*.js");
+
+        IFileInfo fileInfo = provider.GetFileInfo("/bundles/js/app.min.js");
+        using Stream stream = fileInfo.CreateReadStream();
+        string content = new StreamReader(stream).ReadToEnd();
+        Assert.Contains("hello", content);
+        Assert.Contains("x=1", content);
+    }
+
+    [Fact]
     public void GetSourceUrls_ReturnsFiles_WhenBundleExists()
     {
         ScriptBundleProvider provider = MakeProvider(Environments.Development);

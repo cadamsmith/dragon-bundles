@@ -7,6 +7,8 @@ global using Microsoft.Extensions.DependencyInjection;
 global using Microsoft.Extensions.FileProviders;
 global using Microsoft.Extensions.FileProviders.Composite;
 global using Microsoft.Extensions.Primitives;
+global using Microsoft.Extensions.FileSystemGlobbing;
+global using Microsoft.Extensions.FileSystemGlobbing.Abstractions;
 global using NUglify;
 global using System.Security.Cryptography;
 global using System.Text;
