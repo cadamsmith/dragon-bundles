@@ -1,3 +1,3 @@
 namespace DragonBundles;
 
-public class StyleBundle(string name, List<string> sourceFiles) : Bundle(name, sourceFiles) { }
+public class StyleBundle(string name, List<string> sourceFiles) : Bundle(name, sourceFiles);

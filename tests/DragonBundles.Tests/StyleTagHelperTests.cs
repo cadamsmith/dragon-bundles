@@ -13,13 +13,13 @@ public class StyleTagHelperTests
         env.EnvironmentName.Returns(envName);
         env.WebRootPath.Returns(Path.GetTempPath());
 
-        StyleBundleProvider provider = new StyleBundleProvider(env);
+        StyleBundleProvider provider = new(env);
         if (sourceFiles.Length > 0)
             provider.Add(bundleName, sourceFiles);
 
-        StyleTagHelper helper = new StyleTagHelper(provider, env) { Name = bundleName };
-        TagHelperContext context = new TagHelperContext([], new Dictionary<object, object>(), Guid.NewGuid().ToString());
-        TagHelperOutput output = new TagHelperOutput("style-bundle", [], (_, _) => Task.FromResult<TagHelperContent>(new DefaultTagHelperContent()));
+        StyleTagHelper helper = new(provider, env) { Name = bundleName };
+        TagHelperContext context = new([], new Dictionary<object, object>(), Guid.NewGuid().ToString());
+        TagHelperOutput output = new("style-bundle", [], (_, _) => Task.FromResult<TagHelperContent>(new DefaultTagHelperContent()));
 
         helper.Process(context, output);
         return (helper, output);

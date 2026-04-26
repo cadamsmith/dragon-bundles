@@ -13,13 +13,13 @@ public class ScriptTagHelperTests
         env.EnvironmentName.Returns(envName);
         env.WebRootPath.Returns(Path.GetTempPath());
 
-        ScriptBundleProvider provider = new ScriptBundleProvider(env);
+        ScriptBundleProvider provider = new(env);
         if (sourceFiles.Length > 0)
             provider.Add(bundleName, sourceFiles);
 
-        ScriptTagHelper helper = new ScriptTagHelper(provider, env) { Name = bundleName };
-        TagHelperContext context = new TagHelperContext([], new Dictionary<object, object>(), Guid.NewGuid().ToString());
-        TagHelperOutput output = new TagHelperOutput("script-bundle", [], (_, _) => Task.FromResult<TagHelperContent>(new DefaultTagHelperContent()));
+        ScriptTagHelper helper = new(provider, env) { Name = bundleName };
+        TagHelperContext context = new([], new Dictionary<object, object>(), Guid.NewGuid().ToString());
+        TagHelperOutput output = new("script-bundle", [], (_, _) => Task.FromResult<TagHelperContent>(new DefaultTagHelperContent()));
 
         helper.Process(context, output);
         return (helper, output);

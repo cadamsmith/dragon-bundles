@@ -18,7 +18,9 @@ public abstract class BundleProvider<T>(IWebHostEnvironment env, string bundleDi
         T bundle = Create(name, [.. files]);
 
         if (!_isDevelopment)
+        {
             Minify(bundle);
+        }
 
         _bundles[name] = bundle;
     }
@@ -32,7 +34,9 @@ public abstract class BundleProvider<T>(IWebHostEnvironment env, string bundleDi
     public IFileInfo GetFileInfo(string subpath)
     {
         if (!subpath.StartsWith(bundleDirectory))
+        {
             return new NotFoundFileInfo(subpath);
+        }
 
         string name = subpath[bundleDirectory.Length..].Split('.')[0];
         return _bundles.TryGetValue(name, out T? bundle)
@@ -46,16 +50,16 @@ public abstract class BundleProvider<T>(IWebHostEnvironment env, string bundleDi
     public IChangeToken Watch(string filter) =>
         NullChangeToken.Singleton;
 
-    private sealed class BundleFileInfo(T bundle) : IFileInfo
+    sealed class BundleFileInfo(T bundle) : IFileInfo
     {
-        static readonly Encoding _enc = Encoding.UTF8;
+        static readonly Encoding _encoding = Encoding.UTF8;
 
         public bool Exists => true;
         public bool IsDirectory => false;
         public string Name => bundle.Name;
         public string? PhysicalPath => null;
         public DateTimeOffset LastModified => bundle.LastModified;
-        public long Length => _enc.GetByteCount(bundle.MinifiedContent);
-        public Stream CreateReadStream() => new MemoryStream(_enc.GetBytes(bundle.MinifiedContent));
+        public long Length => _encoding.GetByteCount(bundle.MinifiedContent);
+        public Stream CreateReadStream() => new MemoryStream(_encoding.GetBytes(bundle.MinifiedContent));
     }
 }

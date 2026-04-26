@@ -4,8 +4,7 @@ namespace DragonBundles.Tests.SystemWeb;
 
 public class NUglifyTransformTests
 {
-    static BundleResponse MakeResponse(string content) =>
-        new BundleResponse { Content = content };
+    static BundleResponse MakeResponse(string content) => new() { Content = content };
 
     [Fact]
     public void NUglifyStyleTransform_Process_MinifiesCss()

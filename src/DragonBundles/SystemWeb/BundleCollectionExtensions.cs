@@ -9,7 +9,10 @@ public static class BundleCollectionExtensions
         bundle.Transforms.Clear();
         bundle.Transforms.Add(new NUglifyStyleTransform());
         foreach (string file in files)
+        {
             bundle.Include(file);
+        }
+
         bundles.Add(bundle);
         return bundles;
     }
@@ -21,7 +24,10 @@ public static class BundleCollectionExtensions
         bundle.Transforms.Clear();
         bundle.Transforms.Add(new NUglifyScriptTransform());
         foreach (string file in files)
+        {
             bundle.Include(file);
+        }
+
         bundles.Add(bundle);
         return bundles;
     }

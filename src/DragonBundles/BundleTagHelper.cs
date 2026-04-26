@@ -18,6 +18,8 @@ public abstract class BundleTagHelper<TProvider, TBundle>(TProvider provider, IW
             : [$"{RenderTag(provider.GetUrl(Name))}\n"];
 
         foreach (string tag in tags)
+        {
             output.Content.AppendHtml(tag);
+        }
     }
 }

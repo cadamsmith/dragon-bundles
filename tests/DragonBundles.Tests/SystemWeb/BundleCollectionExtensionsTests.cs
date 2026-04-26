@@ -4,7 +4,7 @@ namespace DragonBundles.Tests.SystemWeb;
 
 public class BundleCollectionExtensionsTests
 {
-    static BundleCollection MakeBundles() => new BundleCollection();
+    static BundleCollection MakeBundles() => new();
 
     [Fact]
     public void AddStyleBundle_RegistersBundleWithCorrectVirtualPath()
