@@ -1,4 +1,4 @@
-# DragonBundles
+# 🐉 dragon-bundles
 
 CSS and JavaScript bundling and minification for ASP.NET Core and classic ASP.NET (System.Web).
 
@@ -7,15 +7,15 @@ CSS and JavaScript bundling and minification for ASP.NET Core and classic ASP.NE
 
 In development, source files are served individually for easy debugging. In production, they are concatenated, minified via [NUglify](https://github.com/trullock/NUglify), and served as a single file.
 
-## Installation
+## installation
 
 ```
 dotnet add package DragonBundles
 ```
 
-## ASP.NET Core (.NET 10)
+## asp.net core (.net 10)
 
-### Setup
+### setup
 
 In `Program.cs`:
 
@@ -38,7 +38,7 @@ In `_ViewImports.cshtml`:
 @addTagHelper *, DragonBundles
 ```
 
-### Usage
+### usage
 
 ```cshtml
 <head>
@@ -65,11 +65,11 @@ In **Production**, a single minified bundle is rendered:
 
 Bundles are minified at startup and served in-memory — no files are written to disk.
 
-## Classic ASP.NET / System.Web (.NET Framework 4.8)
+## classic asp.net / system.web (.net framework 4.8)
 
 DragonBundles integrates with `System.Web.Optimization` as a drop-in upgrade, replacing the default WebGrease minifier with NUglify.
 
-### Setup
+### setup
 
 In `BundleConfig.cs`:
 
@@ -83,7 +83,7 @@ public static void RegisterBundles(BundleCollection bundles)
 }
 ```
 
-### Usage
+### usage
 
 In Razor views, add `@using DragonBundles` (or add it to `Web.config`), then:
 
@@ -99,11 +99,11 @@ In Razor views, add `@using DragonBundles` (or add it to `Web.config`), then:
 
 Dev/prod rendering is controlled by `BundleTable.EnableOptimizations` — individual files in debug, single bundle in release, matching standard `System.Web.Optimization` behavior.
 
-## Migrating from System.Web to ASP.NET Core
+## migrating from system.web to asp.net core
 
 DragonBundles is designed to smooth this migration. Bundle names are consistent across both runtimes — swap the registration and rendering calls when you upgrade, and bundle names stay the same.
 
-## Requirements
+## requirements
 
 | Target | Runtime |
 |---|---|

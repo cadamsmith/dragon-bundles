@@ -1,6 +1,7 @@
 <Solution>
   <Folder Name="/docs/">
     <File Path="CLAUDE.md" />
+    <File Path="README.md" />
   </Folder>
   <Folder Name="/src/">
     <Project Path="src/DragonBundles/DragonBundles.csproj" />
