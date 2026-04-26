@@ -20,13 +20,26 @@ public abstract class BundleProvider<T>(IWebHostEnvironment env, string bundleDi
         if (!_isDevelopment)
         {
             Minify(bundle);
+            if (bundle.MinifiedContent.Length > 0)
+                bundle.Version = ComputeVersion(bundle.MinifiedContent);
         }
 
         _bundles[name] = bundle;
     }
 
-    public string GetUrl(string name) =>
-        $"{bundleDirectory}{name}.min.{Extension}";
+    public string GetUrl(string name)
+    {
+        string baseUrl = $"{bundleDirectory}{name}.min.{Extension}";
+        return _bundles.TryGetValue(name, out T? bundle) && bundle.Version.Length > 0
+            ? $"{baseUrl}?v={bundle.Version}"
+            : baseUrl;
+    }
+
+    static string ComputeVersion(string content)
+    {
+        byte[] hash = SHA256.HashData(Encoding.UTF8.GetBytes(content));
+        return Convert.ToHexString(hash)[..8].ToLowerInvariant();
+    }
 
     public List<string> GetSourceUrls(string name) =>
         _bundles.TryGetValue(name, out T? bundle) ? bundle.SourceFiles : [];

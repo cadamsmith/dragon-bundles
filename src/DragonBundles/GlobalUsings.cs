@@ -8,3 +8,5 @@ global using Microsoft.Extensions.FileProviders;
 global using Microsoft.Extensions.FileProviders.Composite;
 global using Microsoft.Extensions.Primitives;
 global using NUglify;
+global using System.Security.Cryptography;
+global using System.Text;

@@ -57,9 +57,29 @@ public class ScriptBundleProviderTests : IDisposable
     }
 
     [Fact]
-    public void GetUrl_ReturnsCorrectPath()
+    public void GetUrl_WhenNoBundleRegistered_ReturnsBasePath()
     {
         ScriptBundleProvider provider = MakeProvider(Environments.Production);
+        Assert.Equal("/bundles/js/app.min.js", provider.GetUrl("app"));
+    }
+
+    [Fact]
+    public void GetUrl_InProduction_IncludesVersionQueryString()
+    {
+        WriteJsFile("/js/app.js", "var x = 1;");
+        ScriptBundleProvider provider = MakeProvider(Environments.Production);
+        provider.Add("app", "/js/app.js");
+
+        string url = provider.GetUrl("app");
+        Assert.StartsWith("/bundles/js/app.min.js?v=", url);
+    }
+
+    [Fact]
+    public void GetUrl_InDevelopment_DoesNotIncludeVersion()
+    {
+        ScriptBundleProvider provider = MakeProvider(Environments.Development);
+        provider.Add("app", "/js/app.js");
+
         Assert.Equal("/bundles/js/app.min.js", provider.GetUrl("app"));
     }
 

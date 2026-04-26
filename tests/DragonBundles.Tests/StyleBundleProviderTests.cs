@@ -60,9 +60,29 @@ public class StyleBundleProviderTests : IDisposable
     }
 
     [Fact]
-    public void GetUrl_ReturnsCorrectPath()
+    public void GetUrl_WhenNoBundleRegistered_ReturnsBasePath()
     {
         StyleBundleProvider provider = MakeProvider(Environments.Production);
+        Assert.Equal("/bundles/css/site.min.css", provider.GetUrl("site"));
+    }
+
+    [Fact]
+    public void GetUrl_InProduction_IncludesVersionQueryString()
+    {
+        WriteCssFile("/css/site.css", "body { color: red; }");
+        StyleBundleProvider provider = MakeProvider(Environments.Production);
+        provider.Add("site", "/css/site.css");
+
+        string url = provider.GetUrl("site");
+        Assert.StartsWith("/bundles/css/site.min.css?v=", url);
+    }
+
+    [Fact]
+    public void GetUrl_InDevelopment_DoesNotIncludeVersion()
+    {
+        StyleBundleProvider provider = MakeProvider(Environments.Development);
+        provider.Add("site", "/css/site.css");
+
         Assert.Equal("/bundles/css/site.min.css", provider.GetUrl("site"));
     }
 
