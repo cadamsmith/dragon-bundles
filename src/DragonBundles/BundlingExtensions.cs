@@ -25,7 +25,14 @@ public static class BundlingExtensions
 
         app.UseStaticFiles(new StaticFileOptions
         {
-            FileProvider = new CompositeFileProvider(styles, scripts, webEnv.WebRootFileProvider)
+            FileProvider = new CompositeFileProvider(styles, scripts, webEnv.WebRootFileProvider),
+            OnPrepareResponse = ctx =>
+            {
+                if (!webEnv.IsDevelopment() && ctx.Context.Request.Path.StartsWithSegments("/bundles"))
+                {
+                    ctx.Context.Response.Headers.CacheControl = "public, max-age=31536000, immutable";
+                }
+            }
         });
 
         return app;

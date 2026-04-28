@@ -122,4 +122,25 @@ public class BundlingIntegrationTests(BundlingTestFixture fixture) : IClassFixtu
         HttpResponseMessage response = await fixture.Client.GetAsync("/bundles/css/missing.min.css");
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
+
+    [Fact]
+    public async Task StyleBundle_HasLongLivedCacheControlHeader()
+    {
+        HttpResponseMessage response = await fixture.Client.GetAsync("/bundles/css/site.min.css");
+        Assert.Equal("public, max-age=31536000, immutable", response.Headers.CacheControl?.ToString());
+    }
+
+    [Fact]
+    public async Task ScriptBundle_HasLongLivedCacheControlHeader()
+    {
+        HttpResponseMessage response = await fixture.Client.GetAsync("/bundles/js/app.min.js");
+        Assert.Equal("public, max-age=31536000, immutable", response.Headers.CacheControl?.ToString());
+    }
+
+    [Fact]
+    public async Task StaticFile_DoesNotHaveLongLivedCacheControlHeader()
+    {
+        HttpResponseMessage response = await fixture.Client.GetAsync("/static.txt");
+        Assert.Null(response.Headers.CacheControl);
+    }
 }
