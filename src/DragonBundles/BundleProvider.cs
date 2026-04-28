@@ -36,6 +36,8 @@ abstract class BundleProvider<T>(IWebHostEnvironment env, string bundleDirectory
             : baseUrl;
     }
 
+    protected virtual string TransformFileContent(string content, string sourceUrl) => content;
+
     protected string ReadSourceFiles(Bundle bundle) =>
         string.Join(ConcatenationToken, bundle.SourceFiles.Select(f =>
         {
@@ -46,7 +48,7 @@ abstract class BundleProvider<T>(IWebHostEnvironment env, string bundleDirectory
                     $"Bundle '{bundle.Name}': source file '{f}' not found.", path);
             }
 
-            return File.ReadAllText(path);
+            return TransformFileContent(File.ReadAllText(path), f);
         }));
 
     List<string> ResolveSourceUrls(string[] patterns)

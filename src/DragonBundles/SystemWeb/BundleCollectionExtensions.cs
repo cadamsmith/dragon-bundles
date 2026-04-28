@@ -11,7 +11,7 @@ public static class BundleCollectionExtensions
             bundle.Transforms.Add(new NUglifyStyleTransform());
             foreach (string file in files)
             {
-                bundle.Include(file);
+                bundle.Include(file, new CssRewriteUrlTransform());
             }
 
             bundles.Add(bundle);

@@ -164,4 +164,111 @@ public class StyleBundleProviderTests : IDisposable
         IFileInfo fileInfo = provider.GetFileInfo("/wwwroot/css/site.css");
         Assert.False(fileInfo.Exists);
     }
+
+    [Fact]
+    public void Add_InProduction_RewritesRelativeUrlToAbsolute()
+    {
+        WriteCssFile("/css/site.css", "body { background: url(images/bg.png); }");
+        StyleBundleProvider provider = MakeProvider(Environments.Production);
+        provider.Add("site", "/css/site.css");
+
+        IFileInfo fileInfo = provider.GetFileInfo("/bundles/css/site.min.css");
+        using Stream stream = fileInfo.CreateReadStream();
+        string content = new StreamReader(stream).ReadToEnd();
+        Assert.Contains("/css/images/bg.png", content);
+    }
+
+    [Fact]
+    public void Add_InProduction_RewritesParentDirectoryUrl()
+    {
+        WriteCssFile("/css/theme/buttons.css", "a { background: url(../images/arrow.png); }");
+        StyleBundleProvider provider = MakeProvider(Environments.Production);
+        provider.Add("theme", "/css/theme/buttons.css");
+
+        IFileInfo fileInfo = provider.GetFileInfo("/bundles/css/theme.min.css");
+        using Stream stream = fileInfo.CreateReadStream();
+        string content = new StreamReader(stream).ReadToEnd();
+        Assert.Contains("/css/images/arrow.png", content);
+    }
+
+    [Fact]
+    public void Add_InProduction_RewritesUrlsPerSourceFile()
+    {
+        WriteCssFile("/css/a.css", "body { background: url(a-bg.png); }");
+        WriteCssFile("/img/b.css", "h1 { background: url(b-bg.png); }");
+        StyleBundleProvider provider = MakeProvider(Environments.Production);
+        provider.Add("site", "/css/a.css", "/img/b.css");
+
+        IFileInfo fileInfo = provider.GetFileInfo("/bundles/css/site.min.css");
+        using Stream stream = fileInfo.CreateReadStream();
+        string content = new StreamReader(stream).ReadToEnd();
+        Assert.Contains("/css/a-bg.png", content);
+        Assert.Contains("/img/b-bg.png", content);
+    }
+
+    [Fact]
+    public void Add_InProduction_DoesNotRewriteAbsoluteUrl()
+    {
+        WriteCssFile("/css/site.css", "body { background: url(/images/bg.png); }");
+        StyleBundleProvider provider = MakeProvider(Environments.Production);
+        provider.Add("site", "/css/site.css");
+
+        IFileInfo fileInfo = provider.GetFileInfo("/bundles/css/site.min.css");
+        using Stream stream = fileInfo.CreateReadStream();
+        string content = new StreamReader(stream).ReadToEnd();
+        Assert.Contains("/images/bg.png", content);
+        Assert.DoesNotContain("/css/images/bg.png", content);
+    }
+
+    [Fact]
+    public void Add_InProduction_DoesNotRewriteProtocolRelativeUrl()
+    {
+        WriteCssFile("/css/site.css", "body { background: url(//cdn.example.com/bg.png); }");
+        StyleBundleProvider provider = MakeProvider(Environments.Production);
+        provider.Add("site", "/css/site.css");
+
+        IFileInfo fileInfo = provider.GetFileInfo("/bundles/css/site.min.css");
+        using Stream stream = fileInfo.CreateReadStream();
+        string content = new StreamReader(stream).ReadToEnd();
+        Assert.Contains("//cdn.example.com/bg.png", content);
+    }
+
+    [Fact]
+    public void Add_InProduction_DoesNotRewriteExternalUrl()
+    {
+        WriteCssFile("/css/site.css", "body { background: url(https://cdn.example.com/bg.png); }");
+        StyleBundleProvider provider = MakeProvider(Environments.Production);
+        provider.Add("site", "/css/site.css");
+
+        IFileInfo fileInfo = provider.GetFileInfo("/bundles/css/site.min.css");
+        using Stream stream = fileInfo.CreateReadStream();
+        string content = new StreamReader(stream).ReadToEnd();
+        Assert.Contains("https://cdn.example.com/bg.png", content);
+    }
+
+    [Fact]
+    public void Add_InProduction_DoesNotRewriteDataUrl()
+    {
+        WriteCssFile("/css/site.css", "body { background: url(data:image/png;base64,abc); }");
+        StyleBundleProvider provider = MakeProvider(Environments.Production);
+        provider.Add("site", "/css/site.css");
+
+        IFileInfo fileInfo = provider.GetFileInfo("/bundles/css/site.min.css");
+        using Stream stream = fileInfo.CreateReadStream();
+        string content = new StreamReader(stream).ReadToEnd();
+        Assert.Contains("data:image/png;base64,abc", content);
+    }
+
+    [Fact]
+    public void Add_InProduction_DoesNotRewriteFragmentUrl()
+    {
+        WriteCssFile("/css/site.css", "mask { mask: url(#myMask); }");
+        StyleBundleProvider provider = MakeProvider(Environments.Production);
+        provider.Add("site", "/css/site.css");
+
+        IFileInfo fileInfo = provider.GetFileInfo("/bundles/css/site.min.css");
+        using Stream stream = fileInfo.CreateReadStream();
+        string content = new StreamReader(stream).ReadToEnd();
+        Assert.Contains("#myMask", content);
+    }
 }
