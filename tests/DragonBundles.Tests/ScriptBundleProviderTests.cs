@@ -57,6 +57,25 @@ public class ScriptBundleProviderTests : IDisposable
     }
 
     [Fact]
+    public void Add_InProduction_SeparatesJsFilesWithSemicolon()
+    {
+        // Without a `;` between files, ASI rules let a leading `(` on the next file
+        // be parsed as a call against the previous statement's value.
+        WriteJsFile("/js/a.js", "var a = 1");
+        WriteJsFile("/js/b.js", "(function () { window.b = 2 })()");
+        ScriptBundleProvider provider = MakeProvider(Environments.Production);
+
+        provider.Add("app", "/js/a.js", "/js/b.js");
+
+        IFileInfo fileInfo = provider.GetFileInfo("/bundles/js/app.min.js");
+        using Stream stream = fileInfo.CreateReadStream();
+        string content = new StreamReader(stream).ReadToEnd();
+
+        Assert.Contains("a=1;", content);
+        Assert.DoesNotContain("a=1(", content);
+    }
+
+    [Fact]
     public void GetUrl_WhenNoBundleRegistered_ReturnsBasePath()
     {
         ScriptBundleProvider provider = MakeProvider(Environments.Production);

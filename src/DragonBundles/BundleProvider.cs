@@ -10,6 +10,7 @@ public abstract class BundleProvider<T>(IWebHostEnvironment env, string bundleDi
     protected readonly string WebRootPath = env.WebRootPath;
 
     protected abstract string Extension { get; }
+    protected virtual string ConcatenationToken => Environment.NewLine;
     protected abstract T Create(string name, List<string> sourceFiles);
     public abstract void Minify(T bundle);
 
@@ -36,7 +37,7 @@ public abstract class BundleProvider<T>(IWebHostEnvironment env, string bundleDi
     }
 
     protected string ReadSourceFiles(Bundle bundle) =>
-        string.Join(Environment.NewLine, bundle.SourceFiles.Select(f =>
+        string.Join(ConcatenationToken, bundle.SourceFiles.Select(f =>
         {
             string path = Path.Combine(WebRootPath, f.TrimStart('/'));
             if (!File.Exists(path))
