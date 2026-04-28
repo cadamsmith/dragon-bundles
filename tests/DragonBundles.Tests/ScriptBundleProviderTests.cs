@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.FileProviders;
 using NSubstitute;
@@ -16,6 +17,7 @@ public class ScriptBundleProviderTests : IDisposable
         IWebHostEnvironment? env = Substitute.For<IWebHostEnvironment>();
         env.EnvironmentName.Returns(envName);
         env.WebRootPath.Returns(_webRoot);
+        env.WebRootFileProvider.Returns(new NullFileProvider());
         return new ScriptBundleProvider(env);
     }
 
@@ -179,5 +181,39 @@ public class ScriptBundleProviderTests : IDisposable
         ScriptBundleProvider provider = MakeProvider(Environments.Production);
         IFileInfo fileInfo = provider.GetFileInfo("/wwwroot/js/app.js");
         Assert.False(fileInfo.Exists);
+    }
+
+    [Fact]
+    public async Task Add_InProduction_ReminifiesWhenSourceFileChanges()
+    {
+        WriteJsFile("/js/app.js", "var x = 1;");
+        using PhysicalFileProvider fileProvider = new(_webRoot);
+
+        IWebHostEnvironment env = Substitute.For<IWebHostEnvironment>();
+        env.EnvironmentName.Returns(Environments.Production);
+        env.WebRootPath.Returns(_webRoot);
+        env.WebRootFileProvider.Returns(fileProvider);
+
+        ScriptBundleProvider provider = new(env);
+        provider.Add("app", "/js/app.js");
+
+        IFileInfo initial = provider.GetFileInfo("/bundles/js/app.min.js");
+        await using Stream initialStream = initial.CreateReadStream();
+        string initialContent = await new StreamReader(initialStream).ReadToEndAsync();
+
+        WriteJsFile("/js/app.js", "var y = 2;");
+
+        string updatedContent = initialContent;
+        Stopwatch sw = Stopwatch.StartNew();
+        while (sw.Elapsed.TotalSeconds < 5 && updatedContent == initialContent)
+        {
+            await Task.Delay(100);
+            IFileInfo updated = provider.GetFileInfo("/bundles/js/app.min.js");
+            await using Stream s = updated.CreateReadStream();
+            updatedContent = await new StreamReader(s).ReadToEndAsync();
+        }
+
+        Assert.NotEqual(initialContent, updatedContent);
+        Assert.Contains("y", updatedContent);
     }
 }

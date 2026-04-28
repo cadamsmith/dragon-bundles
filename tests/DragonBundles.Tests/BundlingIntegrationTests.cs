@@ -39,7 +39,7 @@ public class BundlingTestFixture : IAsyncLifetime
 
     public async Task DisposeAsync()
     {
-        Client?.Dispose();
+        Client.Dispose();
         if (_app != null)
         {
             await _app.DisposeAsync();

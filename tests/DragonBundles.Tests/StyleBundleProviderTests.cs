@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.FileProviders;
 using NSubstitute;
@@ -16,6 +17,7 @@ public class StyleBundleProviderTests : IDisposable
         IWebHostEnvironment? env = Substitute.For<IWebHostEnvironment>();
         env.EnvironmentName.Returns(envName);
         env.WebRootPath.Returns(_webRoot);
+        env.WebRootFileProvider.Returns(new NullFileProvider());
         return new StyleBundleProvider(env);
     }
 
@@ -270,5 +272,39 @@ public class StyleBundleProviderTests : IDisposable
         using Stream stream = fileInfo.CreateReadStream();
         string content = new StreamReader(stream).ReadToEnd();
         Assert.Contains("#myMask", content);
+    }
+
+    [Fact]
+    public async Task Add_InProduction_ReminifiesWhenSourceFileChanges()
+    {
+        WriteCssFile("/css/site.css", "body { color: red; }");
+        using PhysicalFileProvider fileProvider = new(_webRoot);
+
+        IWebHostEnvironment env = Substitute.For<IWebHostEnvironment>();
+        env.EnvironmentName.Returns(Environments.Production);
+        env.WebRootPath.Returns(_webRoot);
+        env.WebRootFileProvider.Returns(fileProvider);
+
+        StyleBundleProvider provider = new(env);
+        provider.Add("site", "/css/site.css");
+
+        IFileInfo initial = provider.GetFileInfo("/bundles/css/site.min.css");
+        await using Stream initialStream = initial.CreateReadStream();
+        string initialContent = await new StreamReader(initialStream).ReadToEndAsync();
+
+        WriteCssFile("/css/site.css", "h1 { font-size: 42px; }");
+
+        string updatedContent = initialContent;
+        Stopwatch sw = Stopwatch.StartNew();
+        while (sw.Elapsed.TotalSeconds < 5 && updatedContent == initialContent)
+        {
+            await Task.Delay(100);
+            IFileInfo updated = provider.GetFileInfo("/bundles/css/site.min.css");
+            await using Stream s = updated.CreateReadStream();
+            updatedContent = await new StreamReader(s).ReadToEndAsync();
+        }
+
+        Assert.NotEqual(initialContent, updatedContent);
+        Assert.Contains("42px", updatedContent);
     }
 }

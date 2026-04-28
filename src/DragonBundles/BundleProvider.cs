@@ -5,7 +5,10 @@ abstract class BundleProvider<T>(IWebHostEnvironment env, string bundleDirectory
 {
     readonly Dictionary<string, T> _bundles = [];
     readonly bool _isDevelopment = env.IsEnvironment(Environments.Development);
+    readonly IFileProvider _webRootFileProvider = env.WebRootFileProvider;
     protected readonly string WebRootPath = env.WebRootPath;
+
+    readonly Lock _rebuildLock = new();
 
     protected abstract string Extension { get; }
     protected virtual string ConcatenationToken => Environment.NewLine;
@@ -23,9 +26,38 @@ abstract class BundleProvider<T>(IWebHostEnvironment env, string bundleDirectory
             {
                 bundle.Version = ComputeVersion(bundle.MinifiedContent);
             }
+            WatchBundle(bundle);
         }
 
         _bundles[name] = bundle;
+    }
+
+    void WatchBundle(T bundle)
+    {
+        List<IChangeToken> tokens = [.. bundle.SourceFiles
+            .Select(f => _webRootFileProvider.Watch(f.TrimStart('/')))];
+        CompositeChangeToken composite = new(tokens);
+        composite.RegisterChangeCallback(_ => RebuildBundle(bundle), null);
+    }
+
+    void RebuildBundle(T bundle)
+    {
+        WatchBundle(bundle);
+        try
+        {
+            lock (_rebuildLock)
+            {
+                Minify(bundle);
+                if (bundle.MinifiedContent.Length > 0)
+                {
+                    bundle.Version = ComputeVersion(bundle.MinifiedContent);
+                }
+            }
+        }
+        catch (IOException)
+        {
+            // Source file may be mid-write; bundle retains previous content until the next change.
+        }
     }
 
     public string GetUrl(string name)
@@ -53,7 +85,7 @@ abstract class BundleProvider<T>(IWebHostEnvironment env, string bundleDirectory
 
     List<string> ResolveSourceUrls(string[] patterns)
     {
-        List<string> result = new();
+        List<string> result = [];
         foreach (string pattern in patterns)
         {
             if (!pattern.Contains('*') && !pattern.Contains('?'))
@@ -103,14 +135,12 @@ abstract class BundleProvider<T>(IWebHostEnvironment env, string bundleDirectory
 
     sealed class BundleFileInfo(T bundle) : IFileInfo
     {
-        static readonly Encoding _encoding = Encoding.UTF8;
-
         public bool Exists => true;
         public bool IsDirectory => false;
         public string Name => bundle.Name;
         public string? PhysicalPath => null;
         public DateTimeOffset LastModified => bundle.LastModified;
-        public long Length => _encoding.GetByteCount(bundle.MinifiedContent);
-        public Stream CreateReadStream() => new MemoryStream(_encoding.GetBytes(bundle.MinifiedContent));
+        public long Length => Encoding.UTF8.GetByteCount(bundle.MinifiedContent);
+        public Stream CreateReadStream() => new MemoryStream(Encoding.UTF8.GetBytes(bundle.MinifiedContent));
     }
 }

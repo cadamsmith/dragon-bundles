@@ -19,7 +19,7 @@ public class StyleTagHelperTests : IDisposable
         File.WriteAllText(full, content);
     }
 
-    (StyleTagHelper helper, TagHelperOutput output) MakeTagHelper(string envName, string bundleName, params string[] sourceFiles)
+    TagHelperOutput MakeTagHelper(string envName, string bundleName, params string[] sourceFiles)
     {
         IWebHostEnvironment? env = Substitute.For<IWebHostEnvironment>();
         env.EnvironmentName.Returns(envName);
@@ -40,13 +40,13 @@ public class StyleTagHelperTests : IDisposable
         TagHelperOutput output = new("style-bundle", [], (_, _) => Task.FromResult<TagHelperContent>(new DefaultTagHelperContent()));
 
         helper.Process(context, output);
-        return (helper, output);
+        return output;
     }
 
     [Fact]
     public void Process_InDevelopment_RendersIndividualLinkTags()
     {
-        (_, TagHelperOutput output) = MakeTagHelper(Environments.Development, "site", "/css/a.css", "/css/b.css");
+        TagHelperOutput output = MakeTagHelper(Environments.Development, "site", "/css/a.css", "/css/b.css");
         string? html = output.Content.GetContent();
 
         Assert.Contains("href=\"/css/a.css\"", html);
@@ -58,7 +58,7 @@ public class StyleTagHelperTests : IDisposable
     public void Process_InProduction_RendersSingleBundleTag()
     {
         WriteCssFile("/css/a.css", "body { color: red; }");
-        (_, TagHelperOutput output) = MakeTagHelper(Environments.Production, "site", "/css/a.css");
+        TagHelperOutput output = MakeTagHelper(Environments.Production, "site", "/css/a.css");
         string? html = output.Content.GetContent();
 
         Assert.Contains("href=\"/bundles/css/site.min.css?v=", html);
@@ -68,14 +68,14 @@ public class StyleTagHelperTests : IDisposable
     [Fact]
     public void Process_SuppressesOriginalTag()
     {
-        (_, TagHelperOutput output) = MakeTagHelper(Environments.Production, "site");
+        TagHelperOutput output = MakeTagHelper(Environments.Production, "site");
         Assert.Null(output.TagName);
     }
 
     [Fact]
     public void Process_InDevelopment_IncludesBundleAttribute()
     {
-        (_, TagHelperOutput output) = MakeTagHelper(Environments.Development, "site", "/css/a.css");
+        TagHelperOutput output = MakeTagHelper(Environments.Development, "site", "/css/a.css");
         Assert.Contains("data-bundle=\"site\"", output.Content.GetContent());
     }
 }
