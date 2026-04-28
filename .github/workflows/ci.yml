@@ -21,8 +21,11 @@ jobs:
       - name: Restore
         run: dotnet restore
 
+      - name: Format check
+        run: dotnet format --verify-no-changes --no-restore
+
       - name: Build
-        run: dotnet build --no-restore --configuration Release
+        run: dotnet build --no-restore --configuration Release -p:ContinuousIntegrationBuild=true
 
       - name: Test
         run: dotnet test --no-build --configuration Release --framework net10.0
@@ -42,7 +45,7 @@ jobs:
         run: dotnet restore
 
       - name: Build
-        run: dotnet build --no-restore --configuration Release
+        run: dotnet build --no-restore --configuration Release -p:ContinuousIntegrationBuild=true
 
       - name: Test
         run: dotnet test --no-build --configuration Release --framework net48

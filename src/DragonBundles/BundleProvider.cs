@@ -1,5 +1,3 @@
-using System.Text;
-
 namespace DragonBundles;
 
 internal abstract class BundleProvider<T>(IWebHostEnvironment env, string bundleDirectory)
@@ -78,7 +76,7 @@ internal abstract class BundleProvider<T>(IWebHostEnvironment env, string bundle
 
     public IFileInfo GetFileInfo(string subpath)
     {
-        if (!subpath.StartsWith(bundleDirectory))
+        if (!subpath.StartsWith(bundleDirectory, StringComparison.Ordinal))
         {
             return new NotFoundFileInfo(subpath);
         }
