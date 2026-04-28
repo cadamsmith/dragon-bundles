@@ -51,7 +51,7 @@ abstract class BundleProvider<T>(IWebHostEnvironment env, string bundleDirectory
 
     List<string> ResolveSourceUrls(string[] patterns)
     {
-        var result = new List<string>();
+        List<string> result = new();
         foreach (string pattern in patterns)
         {
             if (!pattern.Contains('*') && !pattern.Contains('?'))
@@ -60,14 +60,13 @@ abstract class BundleProvider<T>(IWebHostEnvironment env, string bundleDirectory
                 continue;
             }
 
-            var matcher = new Matcher();
+            Matcher matcher = new();
             matcher.AddInclude(pattern.TrimStart('/'));
             PatternMatchingResult matchResult = matcher.Execute(
                 new DirectoryInfoWrapper(new DirectoryInfo(WebRootPath)));
-            foreach (FilePatternMatch file in matchResult.Files.OrderBy(f => f.Path))
-            {
-                result.Add("/" + file.Path.Replace('\\', '/'));
-            }
+            result.AddRange(matchResult.Files
+                .OrderBy(f => f.Path)
+                .Select(f => "/" + f.Path.Replace('\\', '/')));
         }
         return result;
     }

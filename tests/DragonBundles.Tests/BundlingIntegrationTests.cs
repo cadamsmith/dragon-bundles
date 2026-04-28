@@ -20,7 +20,7 @@ public class BundlingTestFixture : IAsyncLifetime
         WriteFile("js/b.js", "var   x   =   1;");
         WriteFile("static.txt", "hello static");
 
-        var builder = WebApplication.CreateBuilder(new WebApplicationOptions
+        WebApplicationBuilder builder = WebApplication.CreateBuilder(new WebApplicationOptions
         {
             EnvironmentName = Environments.Production,
             WebRootPath = _webRoot,
@@ -64,35 +64,35 @@ public class BundlingIntegrationTests(BundlingTestFixture fixture) : IClassFixtu
     [Fact]
     public async Task StyleBundle_IsServedAtExpectedUrl()
     {
-        var response = await fixture.Client.GetAsync("/bundles/css/site.min.css");
+        HttpResponseMessage response = await fixture.Client.GetAsync("/bundles/css/site.min.css");
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
     [Fact]
     public async Task ScriptBundle_IsServedAtExpectedUrl()
     {
-        var response = await fixture.Client.GetAsync("/bundles/js/app.min.js");
+        HttpResponseMessage response = await fixture.Client.GetAsync("/bundles/js/app.min.js");
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
     [Fact]
     public async Task StyleBundle_HasCssContentType()
     {
-        var response = await fixture.Client.GetAsync("/bundles/css/site.min.css");
+        HttpResponseMessage response = await fixture.Client.GetAsync("/bundles/css/site.min.css");
         Assert.Equal("text/css", response.Content.Headers.ContentType?.MediaType);
     }
 
     [Fact]
     public async Task ScriptBundle_HasJsContentType()
     {
-        var response = await fixture.Client.GetAsync("/bundles/js/app.min.js");
+        HttpResponseMessage response = await fixture.Client.GetAsync("/bundles/js/app.min.js");
         Assert.Equal("text/javascript", response.Content.Headers.ContentType?.MediaType);
     }
 
     [Fact]
     public async Task StyleBundle_ConcatenatesAndMinifiesMultipleFiles()
     {
-        var response = await fixture.Client.GetAsync("/bundles/css/site.min.css");
+        HttpResponseMessage response = await fixture.Client.GetAsync("/bundles/css/site.min.css");
         string content = await response.Content.ReadAsStringAsync();
         Assert.Contains("color:#f00", content);
         Assert.Contains("font-size:24px", content);
@@ -101,7 +101,7 @@ public class BundlingIntegrationTests(BundlingTestFixture fixture) : IClassFixtu
     [Fact]
     public async Task ScriptBundle_ConcatenatesAndMinifiesMultipleFiles()
     {
-        var response = await fixture.Client.GetAsync("/bundles/js/app.min.js");
+        HttpResponseMessage response = await fixture.Client.GetAsync("/bundles/js/app.min.js");
         string content = await response.Content.ReadAsStringAsync();
         Assert.Contains("hello", content);
         Assert.Contains("x=1", content);
@@ -110,7 +110,7 @@ public class BundlingIntegrationTests(BundlingTestFixture fixture) : IClassFixtu
     [Fact]
     public async Task StaticFile_IsStillServedViaCompositeProvider()
     {
-        var response = await fixture.Client.GetAsync("/static.txt");
+        HttpResponseMessage response = await fixture.Client.GetAsync("/static.txt");
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         string content = await response.Content.ReadAsStringAsync();
         Assert.Equal("hello static", content);
@@ -119,7 +119,7 @@ public class BundlingIntegrationTests(BundlingTestFixture fixture) : IClassFixtu
     [Fact]
     public async Task UnknownBundle_Returns404()
     {
-        var response = await fixture.Client.GetAsync("/bundles/css/missing.min.css");
+        HttpResponseMessage response = await fixture.Client.GetAsync("/bundles/css/missing.min.css");
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 }

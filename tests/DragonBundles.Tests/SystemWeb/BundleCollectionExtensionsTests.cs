@@ -9,7 +9,7 @@ public class BundleCollectionExtensionsTests
     [Fact]
     public void AddStyleBundle_RegistersBundleWithCorrectVirtualPath()
     {
-        var bundles = MakeBundles();
+        BundleCollection bundles = MakeBundles();
 
         bundles.AddStyleBundle("css", "~/Content/site.css");
 
@@ -19,11 +19,11 @@ public class BundleCollectionExtensionsTests
     [Fact]
     public void AddStyleBundle_RegistersNUglifyTransform()
     {
-        var bundles = MakeBundles();
+        BundleCollection bundles = MakeBundles();
 
         bundles.AddStyleBundle("css", "~/Content/site.css");
 
-        var bundle = bundles.GetBundleFor("~/bundles/css/css");
+        Bundle bundle = bundles.GetBundleFor("~/bundles/css/css");
         Assert.NotNull(bundle);
         Assert.Single(bundle!.Transforms);
         Assert.IsType<NUglifyStyleTransform>(bundle.Transforms[0]);
@@ -32,18 +32,18 @@ public class BundleCollectionExtensionsTests
     [Fact]
     public void AddStyleBundle_RegistersStyleBundleType()
     {
-        var bundles = MakeBundles();
+        BundleCollection bundles = MakeBundles();
 
         bundles.AddStyleBundle("theme", "~/Content/site.css", "~/Content/theme.css");
 
-        var bundle = bundles.GetBundleFor("~/bundles/css/theme");
+        Bundle bundle = bundles.GetBundleFor("~/bundles/css/theme");
         Assert.IsType<StyleBundle>(bundle);
     }
 
     [Fact]
     public void AddScriptBundle_RegistersBundleWithCorrectVirtualPath()
     {
-        var bundles = MakeBundles();
+        BundleCollection bundles = MakeBundles();
 
         bundles.AddScriptBundle("app", "~/Scripts/jquery.js");
 
@@ -53,11 +53,11 @@ public class BundleCollectionExtensionsTests
     [Fact]
     public void AddScriptBundle_RegistersNUglifyTransform()
     {
-        var bundles = MakeBundles();
+        BundleCollection bundles = MakeBundles();
 
         bundles.AddScriptBundle("app", "~/Scripts/jquery.js");
 
-        var bundle = bundles.GetBundleFor("~/bundles/js/app");
+        Bundle bundle = bundles.GetBundleFor("~/bundles/js/app");
         Assert.NotNull(bundle);
         Assert.Single(bundle!.Transforms);
         Assert.IsType<NUglifyScriptTransform>(bundle.Transforms[0]);
@@ -66,20 +66,20 @@ public class BundleCollectionExtensionsTests
     [Fact]
     public void AddScriptBundle_RegistersScriptBundleType()
     {
-        var bundles = MakeBundles();
+        BundleCollection bundles = MakeBundles();
 
         bundles.AddScriptBundle("app", "~/Scripts/jquery.js", "~/Scripts/main.js");
 
-        var bundle = bundles.GetBundleFor("~/bundles/js/app");
+        Bundle bundle = bundles.GetBundleFor("~/bundles/js/app");
         Assert.IsType<ScriptBundle>(bundle);
     }
 
     [Fact]
     public void AddStyleBundle_ReturnsSameBundleCollection()
     {
-        var bundles = MakeBundles();
+        BundleCollection bundles = MakeBundles();
 
-        var result = bundles.AddStyleBundle("css", "~/Content/site.css");
+        BundleCollection result = bundles.AddStyleBundle("css", "~/Content/site.css");
 
         Assert.Same(bundles, result);
     }
@@ -87,9 +87,9 @@ public class BundleCollectionExtensionsTests
     [Fact]
     public void AddScriptBundle_ReturnsSameBundleCollection()
     {
-        var bundles = MakeBundles();
+        BundleCollection bundles = MakeBundles();
 
-        var result = bundles.AddScriptBundle("app", "~/Scripts/main.js");
+        BundleCollection result = bundles.AddScriptBundle("app", "~/Scripts/main.js");
 
         Assert.Same(bundles, result);
     }

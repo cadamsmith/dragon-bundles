@@ -9,8 +9,8 @@ public class NUglifyTransformTests
     [Fact]
     public void NUglifyStyleTransform_Process_MinifiesCss()
     {
-        var transform = new NUglifyStyleTransform();
-        var response = MakeResponse("body   {   color:   red;   }");
+        NUglifyStyleTransform transform = new();
+        BundleResponse response = MakeResponse("body   {   color:   red;   }");
 
         transform.Process(null!, response);
 
@@ -21,8 +21,8 @@ public class NUglifyTransformTests
     [Fact]
     public void NUglifyStyleTransform_Process_SetsCssContentType()
     {
-        var transform = new NUglifyStyleTransform();
-        var response = MakeResponse("body{}");
+        NUglifyStyleTransform transform = new();
+        BundleResponse response = MakeResponse("body{}");
 
         transform.Process(null!, response);
 
@@ -32,18 +32,18 @@ public class NUglifyTransformTests
     [Fact]
     public void NUglifyStyleTransform_Process_NullContextDoesNotThrow()
     {
-        var transform = new NUglifyStyleTransform();
-        var response = MakeResponse("body{}");
+        NUglifyStyleTransform transform = new();
+        BundleResponse response = MakeResponse("body{}");
 
-        var ex = Record.Exception(() => transform.Process(null!, response));
+        Exception ex = Record.Exception(() => transform.Process(null!, response));
         Assert.Null(ex);
     }
 
     [Fact]
     public void NUglifyScriptTransform_Process_MinifiesJs()
     {
-        var transform = new NUglifyScriptTransform();
-        var response = MakeResponse("function hello() { return 'hi'; }");
+        NUglifyScriptTransform transform = new();
+        BundleResponse response = MakeResponse("function hello() { return 'hi'; }");
 
         transform.Process(null!, response);
 
@@ -54,8 +54,8 @@ public class NUglifyTransformTests
     [Fact]
     public void NUglifyScriptTransform_Process_SetsJsContentType()
     {
-        var transform = new NUglifyScriptTransform();
-        var response = MakeResponse("var x=1;");
+        NUglifyScriptTransform transform = new();
+        BundleResponse response = MakeResponse("var x=1;");
 
         transform.Process(null!, response);
 
@@ -65,10 +65,10 @@ public class NUglifyTransformTests
     [Fact]
     public void NUglifyScriptTransform_Process_NullContextDoesNotThrow()
     {
-        var transform = new NUglifyScriptTransform();
-        var response = MakeResponse("var x=1;");
+        NUglifyScriptTransform transform = new();
+        BundleResponse response = MakeResponse("var x=1;");
 
-        var ex = Record.Exception(() => transform.Process(null!, response));
+        Exception ex = Record.Exception(() => transform.Process(null!, response));
         Assert.Null(ex);
     }
 }
