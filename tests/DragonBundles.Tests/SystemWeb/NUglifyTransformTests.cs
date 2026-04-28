@@ -35,7 +35,7 @@ public class NUglifyTransformTests
         NUglifyStyleTransform transform = new();
         BundleResponse response = MakeResponse("body{}");
 
-        Exception ex = Record.Exception(() => transform.Process(null!, response));
+        Exception? ex = Record.Exception(() => transform.Process(null!, response));
         Assert.Null(ex);
     }
 
@@ -68,7 +68,7 @@ public class NUglifyTransformTests
         NUglifyScriptTransform transform = new();
         BundleResponse response = MakeResponse("var x=1;");
 
-        Exception ex = Record.Exception(() => transform.Process(null!, response));
+        Exception? ex = Record.Exception(() => transform.Process(null!, response));
         Assert.Null(ex);
     }
 }

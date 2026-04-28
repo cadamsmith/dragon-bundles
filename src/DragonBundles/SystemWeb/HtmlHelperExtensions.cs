@@ -2,9 +2,12 @@ namespace DragonBundles;
 
 public static class HtmlHelperExtensions
 {
-    public static IHtmlString StyleBundle(this HtmlHelper helper, string name) =>
-        Styles.Render($"~/bundles/css/{name}");
+    extension(HtmlHelper helper)
+    {
+        public static IHtmlString StyleBundle(string name) =>
+            Styles.Render($"~/bundles/css/{name}");
 
-    public static IHtmlString ScriptBundle(this HtmlHelper helper, string name) =>
-        Scripts.Render($"~/bundles/js/{name}");
+        public static IHtmlString ScriptBundle(string name) =>
+            Scripts.Render($"~/bundles/js/{name}");
+    }
 }
