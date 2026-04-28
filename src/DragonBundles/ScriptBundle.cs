@@ -1,3 +1,3 @@
 namespace DragonBundles;
 
-public class ScriptBundle(string name, List<string> sourceFiles) : Bundle(name, sourceFiles);
+internal sealed class ScriptBundle(string name, List<string> sourceFiles) : Bundle(name, sourceFiles);

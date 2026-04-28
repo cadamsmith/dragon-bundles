@@ -1,6 +1,7 @@
 using DragonBundles;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Razor.TagHelpers;
+using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
 
 namespace DragonBundles.Tests;
@@ -29,7 +30,11 @@ public class ScriptTagHelperTests : IDisposable
         if (sourceFiles.Length > 0)
             provider.Add(bundleName, sourceFiles);
 
-        ScriptTagHelper helper = new(provider, env) { Name = bundleName };
+        IServiceProvider services = new ServiceCollection()
+            .AddSingleton(provider)
+            .BuildServiceProvider();
+
+        ScriptTagHelper helper = new(services, env) { Name = bundleName };
         TagHelperContext context = new([], new Dictionary<object, object>(), Guid.NewGuid().ToString());
         TagHelperOutput output = new("script-bundle", [], (_, _) => Task.FromResult<TagHelperContent>(new DefaultTagHelperContent()));
 

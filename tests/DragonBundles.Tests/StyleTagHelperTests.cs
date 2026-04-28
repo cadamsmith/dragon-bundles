@@ -1,6 +1,7 @@
 using DragonBundles;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Razor.TagHelpers;
+using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
 
 namespace DragonBundles.Tests;
@@ -29,7 +30,11 @@ public class StyleTagHelperTests : IDisposable
         if (sourceFiles.Length > 0)
             provider.Add(bundleName, sourceFiles);
 
-        StyleTagHelper helper = new(provider, env) { Name = bundleName };
+        IServiceProvider services = new ServiceCollection()
+            .AddSingleton(provider)
+            .BuildServiceProvider();
+
+        StyleTagHelper helper = new(services, env) { Name = bundleName };
         TagHelperContext context = new([], new Dictionary<object, object>(), Guid.NewGuid().ToString());
         TagHelperOutput output = new("style-bundle", [], (_, _) => Task.FromResult<TagHelperContent>(new DefaultTagHelperContent()));
 

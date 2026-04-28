@@ -1,6 +1,6 @@
 namespace DragonBundles;
 
-public class ScriptBundleProvider(IWebHostEnvironment env) : BundleProvider<ScriptBundle>(env, "/bundles/js/")
+internal sealed class ScriptBundleProvider(IWebHostEnvironment env) : BundleProvider<ScriptBundle>(env, "/bundles/js/")
 {
     protected override string Extension => "js";
     protected override string ConcatenationToken => ";" + Environment.NewLine;

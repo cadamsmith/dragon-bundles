@@ -2,7 +2,7 @@ using System.Text;
 
 namespace DragonBundles;
 
-public abstract class BundleProvider<T>(IWebHostEnvironment env, string bundleDirectory)
+internal abstract class BundleProvider<T>(IWebHostEnvironment env, string bundleDirectory)
     : IFileProvider where T : Bundle
 {
     readonly Dictionary<string, T> _bundles = [];

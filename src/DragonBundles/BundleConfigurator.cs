@@ -1,6 +1,6 @@
 namespace DragonBundles;
 
-public class BundleConfigurator(StyleBundleProvider styleProvider, ScriptBundleProvider scriptProvider)
+internal sealed class BundleConfigurator(StyleBundleProvider styleProvider, ScriptBundleProvider scriptProvider)
     : IBundleConfigurator
 {
     public IBundleConfigurator AddStyleBundle(string name, params string[] files)
