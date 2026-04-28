@@ -1,6 +1,6 @@
 namespace DragonBundles;
 
-internal abstract class BundleProvider<T>(IWebHostEnvironment env, string bundleDirectory)
+abstract class BundleProvider<T>(IWebHostEnvironment env, string bundleDirectory)
     : IFileProvider where T : Bundle
 {
     readonly Dictionary<string, T> _bundles = [];

@@ -1,6 +1,6 @@
 namespace DragonBundles;
 
-internal abstract class Bundle(string name, List<string> sourceFiles)
+abstract class Bundle(string name, List<string> sourceFiles)
 {
     public string Name { get; set; } = name;
     public List<string> SourceFiles { get; set; } = sourceFiles;

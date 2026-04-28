@@ -40,8 +40,15 @@ public class BundlingTestFixture : IAsyncLifetime
     public async Task DisposeAsync()
     {
         Client?.Dispose();
-        if (_app != null) await _app.DisposeAsync();
-        if (Directory.Exists(_webRoot)) Directory.Delete(_webRoot, recursive: true);
+        if (_app != null)
+        {
+            await _app.DisposeAsync();
+        }
+
+        if (Directory.Exists(_webRoot))
+        {
+            Directory.Delete(_webRoot, recursive: true);
+        }
     }
 
     void WriteFile(string relativePath, string content)

@@ -27,7 +27,9 @@ public class ScriptTagHelperTests : IDisposable
 
         ScriptBundleProvider provider = new(env);
         if (sourceFiles.Length > 0)
+        {
             provider.Add(bundleName, sourceFiles);
+        }
 
         IServiceProvider services = new ServiceCollection()
             .AddSingleton(provider)

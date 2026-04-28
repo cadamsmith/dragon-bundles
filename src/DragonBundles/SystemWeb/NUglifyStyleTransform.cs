@@ -1,6 +1,6 @@
 namespace DragonBundles;
 
-internal sealed class NUglifyStyleTransform : IBundleTransform
+sealed class NUglifyStyleTransform : IBundleTransform
 {
     public void Process(BundleContext context, BundleResponse response)
     {
