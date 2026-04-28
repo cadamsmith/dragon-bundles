@@ -17,7 +17,9 @@ public sealed class StyleTagHelper(IServiceProvider services, IWebHostEnvironmen
             : [$"{RenderTag(provider.GetUrl(Name))}\n"];
 
         foreach (string tag in tags)
+        {
             output.Content.AppendHtml(tag);
+        }
     }
 
     string RenderTag(string url) =>

@@ -28,6 +28,7 @@ csharp_style_prefer_primary_constructors = true:suggestion
 csharp_style_expression_bodied_methods = when_on_single_line:suggestion
 csharp_style_expression_bodied_properties = when_on_single_line:suggestion
 csharp_style_expression_bodied_constructors = false:silent
+csharp_prefer_braces = true:warning
 
 # var: codebase mixes both intentionally — no enforcement
 csharp_style_var_for_built_in_types = false:silent

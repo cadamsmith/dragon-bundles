@@ -20,7 +20,9 @@ internal abstract class BundleProvider<T>(IWebHostEnvironment env, string bundle
         {
             Minify(bundle);
             if (bundle.MinifiedContent.Length > 0)
+            {
                 bundle.Version = ComputeVersion(bundle.MinifiedContent);
+            }
         }
 
         _bundles[name] = bundle;
@@ -39,8 +41,11 @@ internal abstract class BundleProvider<T>(IWebHostEnvironment env, string bundle
         {
             string path = Path.Combine(WebRootPath, f.TrimStart('/'));
             if (!File.Exists(path))
+            {
                 throw new FileNotFoundException(
                     $"Bundle '{bundle.Name}': source file '{f}' not found.", path);
+            }
+
             return File.ReadAllText(path);
         }));
 
@@ -60,7 +65,9 @@ internal abstract class BundleProvider<T>(IWebHostEnvironment env, string bundle
             PatternMatchingResult matchResult = matcher.Execute(
                 new DirectoryInfoWrapper(new DirectoryInfo(WebRootPath)));
             foreach (FilePatternMatch file in matchResult.Files.OrderBy(f => f.Path))
+            {
                 result.Add("/" + file.Path.Replace('\\', '/'));
+            }
         }
         return result;
     }
