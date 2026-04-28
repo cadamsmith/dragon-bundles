@@ -2,33 +2,34 @@ namespace DragonBundles;
 
 public static class BundleCollectionExtensions
 {
-    public static BundleCollection AddStyleBundle(
-        this BundleCollection bundles, string name, params string[] files)
+    extension(BundleCollection bundles)
     {
-        StyleBundle bundle = new($"~/bundles/css/{name}");
-        bundle.Transforms.Clear();
-        bundle.Transforms.Add(new NUglifyStyleTransform());
-        foreach (string file in files)
+        public BundleCollection AddStyleBundle(string name, params string[] files)
         {
-            bundle.Include(file);
+            StyleBundle bundle = new($"~/bundles/css/{name}");
+            bundle.Transforms.Clear();
+            bundle.Transforms.Add(new NUglifyStyleTransform());
+            foreach (string file in files)
+            {
+                bundle.Include(file);
+            }
+
+            bundles.Add(bundle);
+            return bundles;
         }
 
-        bundles.Add(bundle);
-        return bundles;
-    }
-
-    public static BundleCollection AddScriptBundle(
-        this BundleCollection bundles, string name, params string[] files)
-    {
-        ScriptBundle bundle = new($"~/bundles/js/{name}");
-        bundle.Transforms.Clear();
-        bundle.Transforms.Add(new NUglifyScriptTransform());
-        foreach (string file in files)
+        public BundleCollection AddScriptBundle(string name, params string[] files)
         {
-            bundle.Include(file);
-        }
+            ScriptBundle bundle = new($"~/bundles/js/{name}");
+            bundle.Transforms.Clear();
+            bundle.Transforms.Add(new NUglifyScriptTransform());
+            foreach (string file in files)
+            {
+                bundle.Include(file);
+            }
 
-        bundles.Add(bundle);
-        return bundles;
+            bundles.Add(bundle);
+            return bundles;
+        }
     }
 }
