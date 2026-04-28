@@ -60,10 +60,22 @@ In **Development**, each source file gets its own tag:
 In **Production**, a single minified bundle is rendered:
 
 ```html
-<link rel="stylesheet" href="/bundles/css/site.min.css" data-bundle="site" />
+<link rel="stylesheet" href="/bundles/css/site.min.css?v=a1b2c3d4" data-bundle="site" />
 ```
 
-Bundles are minified at startup and served in-memory — no files are written to disk.
+The `?v=...` suffix is a content hash for cache busting, updated automatically whenever source files change.
+
+Bundles are minified at startup and served in-memory — no files are written to disk. In non-Development environments, source files are watched for changes and re-minified automatically without a restart.
+
+Relative `url()` references in CSS files are rewritten to absolute paths before minification, so stylesheets from different directories compose correctly.
+
+Source file paths accept glob patterns:
+
+```csharp
+bundles.AddStyleBundle("site", "/css/**/*.css");
+```
+
+Missing source files throw `FileNotFoundException` at startup.
 
 ## classic asp.net / system.web (.net framework 4.8)
 
