@@ -10,7 +10,13 @@ sealed partial class StyleBundleProvider(IWebHostEnvironment env) : BundleProvid
 
     public override void Minify(StyleBundle bundle)
     {
-        bundle.MinifiedContent = Uglify.Css(ReadSourceFiles(bundle)).Code;
+        bundle.MinifiedContent = string.Join(ConcatenationToken, bundle.SourceFiles.Select(f =>
+        {
+            string content = ReadSourceFile(bundle.Name, f);
+            return f.EndsWith(".min.css", StringComparison.OrdinalIgnoreCase)
+                ? content
+                : Uglify.Css(content).Code;
+        }));
         bundle.LastModified = DateTime.UtcNow;
     }
 
