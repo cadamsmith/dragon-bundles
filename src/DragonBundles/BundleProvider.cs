@@ -70,18 +70,19 @@ abstract class BundleProvider<T>(IWebHostEnvironment env, string bundleDirectory
 
     protected virtual string TransformFileContent(string content, string sourceUrl) => content;
 
-    protected string ReadSourceFiles(Bundle bundle) =>
-        string.Join(ConcatenationToken, bundle.SourceFiles.Select(f =>
+    protected string ReadSourceFile(string bundleName, string sourceUrl)
+    {
+        string path = Path.Combine(WebRootPath, sourceUrl.TrimStart('/'));
+        if (!File.Exists(path))
         {
-            string path = Path.Combine(WebRootPath, f.TrimStart('/'));
-            if (!File.Exists(path))
-            {
-                throw new FileNotFoundException(
-                    $"Bundle '{bundle.Name}': source file '{f}' not found.", path);
-            }
+            throw new FileNotFoundException(
+                $"Bundle '{bundleName}': source file '{sourceUrl}' not found.", path);
+        }
+        return TransformFileContent(File.ReadAllText(path), sourceUrl);
+    }
 
-            return TransformFileContent(File.ReadAllText(path), f);
-        }));
+    protected string ReadSourceFiles(Bundle bundle) =>
+        string.Join(ConcatenationToken, bundle.SourceFiles.Select(f => ReadSourceFile(bundle.Name, f)));
 
     List<string> ResolveSourceUrls(string[] patterns)
     {
@@ -100,7 +101,9 @@ abstract class BundleProvider<T>(IWebHostEnvironment env, string bundleDirectory
                 new DirectoryInfoWrapper(new DirectoryInfo(WebRootPath)));
             result.AddRange(matchResult.Files
                 .OrderBy(f => f.Path)
-                .Select(f => "/" + f.Path.Replace('\\', '/')));
+                .Select(f => "/" + f.Path.Replace('\\', '/'))
+                .Where(f => !f.EndsWith(".map", StringComparison.OrdinalIgnoreCase)
+                         && !f.Contains(".min.", StringComparison.OrdinalIgnoreCase)));
         }
         return result;
     }

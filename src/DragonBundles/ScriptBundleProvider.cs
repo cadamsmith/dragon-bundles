@@ -8,7 +8,13 @@ sealed class ScriptBundleProvider(IWebHostEnvironment env) : BundleProvider<Scri
 
     public override void Minify(ScriptBundle bundle)
     {
-        bundle.MinifiedContent = Uglify.Js(ReadSourceFiles(bundle)).Code;
+        bundle.MinifiedContent = string.Join(ConcatenationToken, bundle.SourceFiles.Select(f =>
+        {
+            string content = ReadSourceFile(bundle.Name, f);
+            return f.EndsWith(".min.js", StringComparison.OrdinalIgnoreCase)
+                ? content
+                : Uglify.Js(content).Code;
+        }));
         bundle.LastModified = DateTime.UtcNow;
     }
 }

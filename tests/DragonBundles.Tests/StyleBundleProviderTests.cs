@@ -123,6 +123,70 @@ public class StyleBundleProviderTests : IDisposable
     }
 
     [Fact]
+    public void Add_WithGlobPattern_ExcludesPreMinifiedFiles()
+    {
+        WriteCssFile("/css/a.css", "body {}");
+        WriteCssFile("/css/a.min.css", "body{}");
+        StyleBundleProvider provider = MakeProvider(Environments.Development);
+
+        provider.Add("site", "/css/*.css");
+
+        Assert.Equal(["/css/a.css"], provider.GetSourceUrls("site"));
+    }
+
+    [Fact]
+    public void Add_WithGlobPattern_ExcludesSourceMaps()
+    {
+        WriteCssFile("/css/a.css", "body {}");
+        WriteCssFile("/css/a.css.map", "{}");
+        StyleBundleProvider provider = MakeProvider(Environments.Development);
+
+        provider.Add("site", "/css/*");
+
+        Assert.DoesNotContain("/css/a.css.map", provider.GetSourceUrls("site"));
+    }
+
+    [Fact]
+    public void Add_InProduction_PassesPreMinifiedLiteralThroughVerbatim()
+    {
+        string preMinified = "body{color:red}h1{font-size:24px}";
+        WriteCssFile("/css/site.min.css", preMinified);
+        StyleBundleProvider provider = MakeProvider(Environments.Production);
+
+        provider.Add("site", "/css/site.min.css");
+
+        IFileInfo fileInfo = provider.GetFileInfo("/bundles/css/site.min.css");
+        using Stream stream = fileInfo.CreateReadStream();
+        string content = new StreamReader(stream).ReadToEnd();
+        Assert.Equal(preMinified, content);
+    }
+
+    [Fact]
+    public void Add_InProduction_MixedBundle_MinifiesNonPreMinifiedAndPreservesOrder()
+    {
+        WriteCssFile("/css/a.css", "body   {   color:   red;   }");
+        WriteCssFile("/css/b.min.css", "h1{font-size:24px}");
+        WriteCssFile("/css/c.css", "p   {   margin:   0;   }");
+        StyleBundleProvider provider = MakeProvider(Environments.Production);
+
+        provider.Add("site", "/css/a.css", "/css/b.min.css", "/css/c.css");
+
+        IFileInfo fileInfo = provider.GetFileInfo("/bundles/css/site.min.css");
+        using Stream stream = fileInfo.CreateReadStream();
+        string content = new StreamReader(stream).ReadToEnd();
+
+        int posA = content.IndexOf("color", StringComparison.Ordinal);
+        int posB = content.IndexOf("h1{font-size:24px}", StringComparison.Ordinal);
+        int posC = content.IndexOf("margin", StringComparison.Ordinal);
+
+        Assert.True(posA >= 0);
+        Assert.True(posB >= 0);
+        Assert.True(posC >= 0);
+        Assert.True(posA < posB && posB < posC);
+        Assert.Contains("h1{font-size:24px}", content);
+    }
+
+    [Fact]
     public void GetSourceUrls_ReturnsFiles_WhenBundleExists()
     {
         StyleBundleProvider provider = MakeProvider(Environments.Development);

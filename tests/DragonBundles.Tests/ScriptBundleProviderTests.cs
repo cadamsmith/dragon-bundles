@@ -139,6 +139,70 @@ public class ScriptBundleProviderTests : IDisposable
     }
 
     [Fact]
+    public void Add_WithGlobPattern_ExcludesPreMinifiedFiles()
+    {
+        WriteJsFile("/js/a.js", "var a = 1;");
+        WriteJsFile("/js/a.min.js", "var a=1;");
+        ScriptBundleProvider provider = MakeProvider(Environments.Development);
+
+        provider.Add("app", "/js/*.js");
+
+        Assert.Equal(["/js/a.js"], provider.GetSourceUrls("app"));
+    }
+
+    [Fact]
+    public void Add_WithGlobPattern_ExcludesSourceMaps()
+    {
+        WriteJsFile("/js/a.js", "var a = 1;");
+        WriteJsFile("/js/a.js.map", "{}");
+        ScriptBundleProvider provider = MakeProvider(Environments.Development);
+
+        provider.Add("app", "/js/*");
+
+        Assert.DoesNotContain("/js/a.js.map", provider.GetSourceUrls("app"));
+    }
+
+    [Fact]
+    public void Add_InProduction_PassesPreMinifiedLiteralThroughVerbatim()
+    {
+        string preMinified = "function hello(){return\"hi\";}var x=1;";
+        WriteJsFile("/js/app.min.js", preMinified);
+        ScriptBundleProvider provider = MakeProvider(Environments.Production);
+
+        provider.Add("app", "/js/app.min.js");
+
+        IFileInfo fileInfo = provider.GetFileInfo("/bundles/js/app.min.js");
+        using Stream stream = fileInfo.CreateReadStream();
+        string content = new StreamReader(stream).ReadToEnd();
+        Assert.Equal(preMinified, content);
+    }
+
+    [Fact]
+    public void Add_InProduction_MixedBundle_MinifiesNonPreMinifiedAndPreservesOrder()
+    {
+        WriteJsFile("/js/a.js", "var   a   =   1;");
+        WriteJsFile("/js/b.min.js", "var b=2;");
+        WriteJsFile("/js/c.js", "var   c   =   3;");
+        ScriptBundleProvider provider = MakeProvider(Environments.Production);
+
+        provider.Add("app", "/js/a.js", "/js/b.min.js", "/js/c.js");
+
+        IFileInfo fileInfo = provider.GetFileInfo("/bundles/js/app.min.js");
+        using Stream stream = fileInfo.CreateReadStream();
+        string content = new StreamReader(stream).ReadToEnd();
+
+        int posA = content.IndexOf("a=", StringComparison.Ordinal);
+        int posB = content.IndexOf("b=2", StringComparison.Ordinal);
+        int posC = content.IndexOf("c=", StringComparison.Ordinal);
+
+        Assert.True(posA >= 0);
+        Assert.True(posB >= 0);
+        Assert.True(posC >= 0);
+        Assert.True(posA < posB && posB < posC);
+        Assert.Contains("b=2", content);
+    }
+
+    [Fact]
     public void GetSourceUrls_ReturnsFiles_WhenBundleExists()
     {
         ScriptBundleProvider provider = MakeProvider(Environments.Development);
