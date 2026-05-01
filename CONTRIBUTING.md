@@ -30,6 +30,12 @@ dotnet format          # fix
 dotnet format --verify-no-changes  # check only
 ```
 
+A pre-commit hook runs the check automatically. Enable it once after cloning:
+
+```bash
+git config core.hooksPath .githooks
+```
+
 ## project layout
 
 ```
