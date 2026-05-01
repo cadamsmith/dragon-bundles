@@ -2,9 +2,6 @@
 
 CSS and JavaScript bundling and minification for ASP.NET Core and classic ASP.NET (System.Web).
 
-> [!WARNING]
-> This package is a work in progress and not yet available on NuGet.
-
 In development, source files are served individually for easy debugging. In production, they are concatenated, minified via [NUglify](https://github.com/trullock/NUglify), and served as a single file.
 
 ## installation
