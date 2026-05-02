@@ -18,16 +18,24 @@ public sealed class ScriptTagHelper(IServiceProvider services, IWebHostEnvironme
         output.TagName = null;
         output.SuppressOutput();
 
-        IEnumerable<string> tags = env.IsEnvironment(Environments.Development)
-            ? provider.GetSourceUrls(Name).Select(RenderTag)
-            : [$"{RenderTag(provider.GetUrl(Name))}\n"];
-
-        foreach (string tag in tags)
+        if (env.IsEnvironment(Environments.Development))
         {
-            output.Content.AppendHtml(tag);
+            foreach (string url in provider.GetSourceUrls(Name))
+            {
+                output.Content.AppendHtml(RenderTag(url, integrity: string.Empty));
+            }
+        }
+        else
+        {
+            output.Content.AppendHtml($"{RenderTag(provider.GetUrl(Name), provider.GetIntegrity(Name))}\n");
         }
     }
 
-    string RenderTag(string url) =>
-        $"<script src=\"{url}\" data-bundle=\"{Name}\"></script>";
+    string RenderTag(string url, string integrity)
+    {
+        string sri = integrity.Length > 0
+            ? $" integrity=\"{integrity}\" crossorigin=\"anonymous\""
+            : string.Empty;
+        return $"<script src=\"{url}\"{sri} data-bundle=\"{Name}\"></script>";
+    }
 }

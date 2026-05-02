@@ -78,4 +78,25 @@ public class ScriptTagHelperTests : IDisposable
         TagHelperOutput output = MakeTagHelper(Environments.Development, "app", "/js/a.js");
         Assert.Contains("data-bundle=\"app\"", output.Content.GetContent());
     }
+
+    [Fact]
+    public void Process_InProduction_EmitsIntegrityAndCrossoriginAttributes()
+    {
+        WriteJsFile("/js/a.js", "var x=1;");
+        TagHelperOutput output = MakeTagHelper(Environments.Production, "app", "/js/a.js");
+        string? html = output.Content.GetContent();
+
+        Assert.Contains("integrity=\"sha384-", html);
+        Assert.Contains("crossorigin=\"anonymous\"", html);
+    }
+
+    [Fact]
+    public void Process_InDevelopment_DoesNotEmitIntegrityAttributes()
+    {
+        TagHelperOutput output = MakeTagHelper(Environments.Development, "app", "/js/a.js", "/js/b.js");
+        string? html = output.Content.GetContent();
+
+        Assert.DoesNotContain("integrity=", html);
+        Assert.DoesNotContain("crossorigin=", html);
+    }
 }

@@ -22,10 +22,7 @@ abstract class BundleProvider<T>(IWebHostEnvironment env, string bundleDirectory
         if (!_isDevelopment)
         {
             Minify(bundle);
-            if (bundle.MinifiedContent.Length > 0)
-            {
-                bundle.Version = ComputeVersion(bundle.MinifiedContent);
-            }
+            UpdateHashes(bundle);
             WatchBundle(bundle);
         }
 
@@ -48,10 +45,7 @@ abstract class BundleProvider<T>(IWebHostEnvironment env, string bundleDirectory
             lock (_rebuildLock)
             {
                 Minify(bundle);
-                if (bundle.MinifiedContent.Length > 0)
-                {
-                    bundle.Version = ComputeVersion(bundle.MinifiedContent);
-                }
+                UpdateHashes(bundle);
             }
         }
         catch (IOException)
@@ -108,14 +102,23 @@ abstract class BundleProvider<T>(IWebHostEnvironment env, string bundleDirectory
         return result;
     }
 
-    static string ComputeVersion(string content)
+    static void UpdateHashes(Bundle bundle)
     {
-        byte[] hash = SHA256.HashData(Encoding.UTF8.GetBytes(content));
-        return Convert.ToHexString(hash)[..8].ToLowerInvariant();
+        if (bundle.MinifiedContent.Length == 0)
+        {
+            return;
+        }
+
+        byte[] bytes = Encoding.UTF8.GetBytes(bundle.MinifiedContent);
+        bundle.Version = Convert.ToHexString(SHA256.HashData(bytes))[..8].ToLowerInvariant();
+        bundle.Integrity = "sha384-" + Convert.ToBase64String(SHA384.HashData(bytes));
     }
 
     public List<string> GetSourceUrls(string name) =>
         _bundles.TryGetValue(name, out T? bundle) ? bundle.SourceFiles : [];
+
+    public string GetIntegrity(string name) =>
+        _bundles.TryGetValue(name, out T? bundle) ? bundle.Integrity : string.Empty;
 
     public IFileInfo GetFileInfo(string subpath)
     {

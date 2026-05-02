@@ -78,4 +78,25 @@ public class StyleTagHelperTests : IDisposable
         TagHelperOutput output = MakeTagHelper(Environments.Development, "site", "/css/a.css");
         Assert.Contains("data-bundle=\"site\"", output.Content.GetContent());
     }
+
+    [Fact]
+    public void Process_InProduction_EmitsIntegrityAndCrossoriginAttributes()
+    {
+        WriteCssFile("/css/a.css", "body { color: red; }");
+        TagHelperOutput output = MakeTagHelper(Environments.Production, "site", "/css/a.css");
+        string? html = output.Content.GetContent();
+
+        Assert.Contains("integrity=\"sha384-", html);
+        Assert.Contains("crossorigin=\"anonymous\"", html);
+    }
+
+    [Fact]
+    public void Process_InDevelopment_DoesNotEmitIntegrityAttributes()
+    {
+        TagHelperOutput output = MakeTagHelper(Environments.Development, "site", "/css/a.css", "/css/b.css");
+        string? html = output.Content.GetContent();
+
+        Assert.DoesNotContain("integrity=", html);
+        Assert.DoesNotContain("crossorigin=", html);
+    }
 }
