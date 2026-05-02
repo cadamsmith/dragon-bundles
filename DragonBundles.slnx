@@ -1,7 +1,10 @@
 <Solution>
   <Folder Name="/docs/">
     <File Path="CLAUDE.md" />
+    <File Path="CODE_OF_CONDUCT.md" />
+    <File Path="CONTRIBUTING.md" />
     <File Path="README.md" />
+    <File Path="SECURITY.md" />
   </Folder>
   <Folder Name="/src/">
     <Project Path="src/DragonBundles/DragonBundles.csproj" />
