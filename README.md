@@ -54,13 +54,13 @@ In **Development**, each source file gets its own tag:
 <link rel="stylesheet" href="/css/layout.css" data-bundle="site" />
 ```
 
-In **Production**, a single minified bundle is rendered:
+In **Production**, a single minified bundle is rendered with a [Subresource Integrity](https://developer.mozilla.org/en-US/docs/Web/Security/Subresource_Integrity) hash:
 
 ```html
-<link rel="stylesheet" href="/bundles/css/site.min.css?v=a1b2c3d4" data-bundle="site" />
+<link rel="stylesheet" href="/bundles/css/site.min.css?v=a1b2c3d4" integrity="sha384-..." crossorigin="anonymous" data-bundle="site" />
 ```
 
-The `?v=...` suffix is a content hash for cache busting, updated automatically whenever source files change.
+The `?v=...` suffix is a content hash for cache busting, updated automatically whenever source files change. The `integrity` attribute is a SHA-384 hash of the bundle bytes the browser uses to verify the response wasn't tampered with.
 
 Bundles are minified at startup and served in-memory — no files are written to disk. In non-Development environments, source files are watched for changes and re-minified automatically without a restart.
 

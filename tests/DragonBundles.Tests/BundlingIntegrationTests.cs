@@ -1,6 +1,8 @@
 using System.Net;
+using System.Security.Cryptography;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.TestHost;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace DragonBundles.Tests;
 
@@ -10,6 +12,7 @@ public class BundlingTestFixture : IAsyncLifetime
     WebApplication? _app;
 
     public HttpClient Client { get; private set; } = null!;
+    public IServiceProvider Services => _app!.Services;
 
     public async Task InitializeAsync()
     {
@@ -142,5 +145,27 @@ public class BundlingIntegrationTests(BundlingTestFixture fixture) : IClassFixtu
     {
         HttpResponseMessage response = await fixture.Client.GetAsync("/static.txt");
         Assert.Null(response.Headers.CacheControl);
+    }
+
+    [Fact]
+    public async Task StyleBundle_IntegrityHashMatchesServedContent()
+    {
+        HttpResponseMessage response = await fixture.Client.GetAsync("/bundles/css/site.min.css");
+        byte[] bytes = await response.Content.ReadAsByteArrayAsync();
+        string expected = "sha384-" + Convert.ToBase64String(SHA384.HashData(bytes));
+
+        StyleBundleProvider provider = fixture.Services.GetRequiredService<StyleBundleProvider>();
+        Assert.Equal(expected, provider.GetIntegrity("site"));
+    }
+
+    [Fact]
+    public async Task ScriptBundle_IntegrityHashMatchesServedContent()
+    {
+        HttpResponseMessage response = await fixture.Client.GetAsync("/bundles/js/app.min.js");
+        byte[] bytes = await response.Content.ReadAsByteArrayAsync();
+        string expected = "sha384-" + Convert.ToBase64String(SHA384.HashData(bytes));
+
+        ScriptBundleProvider provider = fixture.Services.GetRequiredService<ScriptBundleProvider>();
+        Assert.Equal(expected, provider.GetIntegrity("app"));
     }
 }

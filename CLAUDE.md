@@ -51,9 +51,9 @@ BundleConfigurator : IBundleConfigurator
 
 1. `AddBundling()` registers `StyleBundleProvider` and `ScriptBundleProvider` as singletons.
 2. `UseBundling(configure)` runs the configure action (populating the providers), then calls `UseStaticFiles` with a `CompositeFileProvider` that layers the two bundle providers over `WebRootFileProvider`.
-3. At startup, `BundleProvider<T>.Add()` resolves glob patterns via `Microsoft.Extensions.FileSystemGlobbing`, then in non-Development environments calls `Minify()` and hashes the result into `bundle.Version` (8-char lowercase hex SHA-256). Missing source files throw `FileNotFoundException`.
+3. At startup, `BundleProvider<T>.Add()` resolves glob patterns via `Microsoft.Extensions.FileSystemGlobbing`, then in non-Development environments calls `Minify()` and `UpdateHashes()`. The latter hashes the minified bytes once and derives both `bundle.Version` (8-char lowercase hex SHA-256, used for cache busting) and `bundle.Integrity` (`sha384-<base64>` SRI string). Missing source files throw `FileNotFoundException`.
 4. In non-Development environments, `WatchBundle()` registers `IChangeToken` watchers on each source file. Any change triggers `RebuildBundle()`, which re-minifies and re-hashes under `_rebuildLock` to serialize concurrent rebuilds. An `IOException` during rebuild is silently swallowed — the bundle retains its previous content until the next change.
-5. Tag helpers use `Environments.Development` (not a custom string) to detect environment. `GetUrl()` appends `?v={bundle.Version}` to production bundle URLs for cache busting.
+5. Tag helpers use `Environments.Development` (not a custom string) to detect environment. In production, `GetUrl()` appends `?v={bundle.Version}` for cache busting and the tag helpers stamp `integrity="sha384-..." crossorigin="anonymous"` from `GetIntegrity()`.
 6. Minified content is served in-memory via `BundleFileInfo : IFileInfo` — no files are written to disk.
 
 ### public api surface — net48

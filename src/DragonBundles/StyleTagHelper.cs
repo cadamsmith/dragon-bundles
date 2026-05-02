@@ -18,16 +18,24 @@ public sealed class StyleTagHelper(IServiceProvider services, IWebHostEnvironmen
         output.TagName = null;
         output.SuppressOutput();
 
-        IEnumerable<string> tags = env.IsEnvironment(Environments.Development)
-            ? provider.GetSourceUrls(Name).Select(RenderTag)
-            : [$"{RenderTag(provider.GetUrl(Name))}\n"];
-
-        foreach (string tag in tags)
+        if (env.IsEnvironment(Environments.Development))
         {
-            output.Content.AppendHtml(tag);
+            foreach (string url in provider.GetSourceUrls(Name))
+            {
+                output.Content.AppendHtml(RenderTag(url, integrity: string.Empty));
+            }
+        }
+        else
+        {
+            output.Content.AppendHtml($"{RenderTag(provider.GetUrl(Name), provider.GetIntegrity(Name))}\n");
         }
     }
 
-    string RenderTag(string url) =>
-        $"<link rel=\"stylesheet\" href=\"{url}\" data-bundle=\"{Name}\" />";
+    string RenderTag(string url, string integrity)
+    {
+        string sri = integrity.Length > 0
+            ? $" integrity=\"{integrity}\" crossorigin=\"anonymous\""
+            : string.Empty;
+        return $"<link rel=\"stylesheet\" href=\"{url}\"{sri} data-bundle=\"{Name}\" />";
+    }
 }
