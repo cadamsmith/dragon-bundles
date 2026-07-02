@@ -65,10 +65,12 @@ Three types are public:
 - `HtmlHelperExtensions` — `@Html.StyleBundle(name)` and `@Html.ScriptBundle(name)`. Wraps `Styles.Render` / `Scripts.Render` with the internal virtual path.
 - `BundlingOptions` — shared, TFM-neutral minification settings type (also public on net10.0), configured here via `ConfigureBundling`.
 
-Two types are internal:
+Internal types:
 
 - `NUglifyStyleTransform : IBundleTransform` — replaces WebGrease's `CssMinify`
-- `NUglifyScriptTransform : IBundleTransform` — replaces WebGrease's `JsMinify`
+- `NUglifyScriptTransform : IBundleTransform` — replaces WebGrease's `JsMinify`; also generates the JS source map (see below)
+- `SourceMapStore` — static in-memory map of bundle name → generated source-map JSON
+- `SourceMapHandler : IHttpHandler` / `SourceMapRouteHandler : IRouteHandler` — serve the stored map at `bundles/js/{name}.min.js.map`
 
 ### minification
 
@@ -81,6 +83,13 @@ CSS files are preprocessed by `StyleBundleProvider.TransformFileContent()` befor
 
 JS files are separated by `;\n` before concatenation (`ScriptBundleProvider.ConcatenationToken`) to guard against ASI hazards at file boundaries.
 
+### JS source maps
+
+Script bundles emit a V3 source map plus a trailing `//# sourceMappingURL={name}.min.js.map` comment on both TFMs. The map-generation logic (per-file minify loop, pre-minified passthrough with output-line tracking, single trailing `sourceMappingURL`) lives in the TFM-neutral `ScriptMapMinifier.Minify(...)`, sharing `DeferredSourceMap` — both files are compiled into the net48 target via explicit `Compile Include` (like `BundlingOptions.cs`).
+
+- net10.0: `ScriptBundleProvider.Minify()` builds `(sourceUrl, content)` pairs from `env.WebRootPath` and calls the helper; the map is stored on `bundle.SourceMap` and served in-memory at `{name}.min.js.map`.
+- net48: `NUglifyScriptTransform` rebuilds the pairs from `BundleResponse.Files` (via `BundleFile.ApplyTransforms()` + `IncludedVirtualPath`) — the transform is handed already-concatenated content, so per-file info must come from `Files` — calls the helper, and stashes the map in the static in-memory `SourceMapStore` keyed by bundle name. `AddScriptBundle` registers one `System.Web.Routing.Route` (inserted at index 0, once) mapping `bundles/js/{name}.min.js.map` to `SourceMapHandler`, which serves the stored map as `application/json` with non-immutable caching. When `BundleResponse.Files` is unavailable (e.g. a unit test setting `Content` directly), the transform falls back to minifying the combined content with no map.
+
 ### tests
 
 Tests live in `tests/DragonBundles.Tests/`. Internal types are exposed via `InternalsVisibleTo`. The project also multi-targets `net8.0;net10.0;net48` using the same conditional compile pattern as the main library.
@@ -89,9 +98,10 @@ Tests live in `tests/DragonBundles.Tests/`. Internal types are exposed via `Inte
 - `StyleBundleProviderTests` / `ScriptBundleProviderTests` — provider logic. Tests that write files use a per-test temp directory cleaned up via `IDisposable`.
 - `StyleTagHelperTests` / `ScriptTagHelperTests` — tag helper HTML output in dev vs production. Use real `TagHelperContext`/`TagHelperOutput` — no mocking needed.
 - `BundlingIntegrationTests` — end-to-end HTTP tests using `TestServer` via `BundlingTestFixture` (`IClassFixture`). Verifies bundles are served at the correct URLs with correct content types and minified content; also confirms static files still pass through the `CompositeFileProvider`.
+- `ScriptMapMinifierTests` — host-independent contract for the shared `ScriptMapMinifier` (sourceMappingURL append, per-source listing, pre-minified passthrough, no-map when all inputs are pre-minified). Primary local guard for source-map behavior on both TFMs since the net48 transform's map path only runs on a live host.
 
 **net48 tests** (`tests/DragonBundles.Tests/SystemWeb/`):
-- `NUglifyTransformTests` — `IBundleTransform` implementations. Uses a real `BundleResponse` with `null` context (transforms don't access context).
+- `NUglifyTransformTests` — `IBundleTransform` implementations (these hit the `Files == null` fallback, so the map path is covered by `ScriptMapMinifierTests`, not here) plus `SourceMapStore` round-trip. Uses a real `BundleResponse` with `null` context (transforms don't access context).
 - `BundleCollectionExtensionsTests` — verifies virtual path registration and NUglify transform wiring via `GetBundleFor()`. Uses a fresh `new BundleCollection()` per test (never `BundleTable.Bundles`).
 
 net48 tests compile on Mac but only run on Windows. CI runs them on a `windows-latest` GitHub Actions runner.

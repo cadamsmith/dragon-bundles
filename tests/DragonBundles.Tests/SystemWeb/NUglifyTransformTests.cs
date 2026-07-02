@@ -57,18 +57,18 @@ public class NUglifyTransformTests
     public void NUglifyScriptTransform_Process_HonorsCodeSettings()
     {
         BundleResponse kept = MakeResponse("/*! license */\nfunction f() { return 1; }");
-        new NUglifyScriptTransform(new CodeSettings { PreserveImportantComments = true }).Process(null!, kept);
+        new NUglifyScriptTransform("app", new CodeSettings { PreserveImportantComments = true }).Process(null!, kept);
         Assert.Contains("/*! license */", kept.Content);
 
         BundleResponse stripped = MakeResponse("/*! license */\nfunction f() { return 1; }");
-        new NUglifyScriptTransform(new CodeSettings { PreserveImportantComments = false }).Process(null!, stripped);
+        new NUglifyScriptTransform("app", new CodeSettings { PreserveImportantComments = false }).Process(null!, stripped);
         Assert.DoesNotContain("/*! license */", stripped.Content);
     }
 
     [Fact]
     public void NUglifyScriptTransform_Process_MinifiesJs()
     {
-        NUglifyScriptTransform transform = new();
+        NUglifyScriptTransform transform = new("app");
         BundleResponse response = MakeResponse("function hello() { return 'hi'; }");
 
         transform.Process(null!, response);
@@ -80,7 +80,7 @@ public class NUglifyTransformTests
     [Fact]
     public void NUglifyScriptTransform_Process_SetsJsContentType()
     {
-        NUglifyScriptTransform transform = new();
+        NUglifyScriptTransform transform = new("app");
         BundleResponse response = MakeResponse("var x=1;");
 
         transform.Process(null!, response);
@@ -91,10 +91,25 @@ public class NUglifyTransformTests
     [Fact]
     public void NUglifyScriptTransform_Process_NullContextDoesNotThrow()
     {
-        NUglifyScriptTransform transform = new();
+        NUglifyScriptTransform transform = new("app");
         BundleResponse response = MakeResponse("var x=1;");
 
         Exception? ex = Record.Exception(() => transform.Process(null!, response));
         Assert.Null(ex);
+    }
+
+    [Fact]
+    public void SourceMapStore_RoundTrips()
+    {
+        SourceMapStore.Set("round-trip-bundle", "{\"version\":3}");
+
+        Assert.True(SourceMapStore.TryGet("round-trip-bundle", out string map));
+        Assert.Equal("{\"version\":3}", map);
+    }
+
+    [Fact]
+    public void SourceMapStore_Miss_ReturnsFalse()
+    {
+        Assert.False(SourceMapStore.TryGet("never-stored-bundle", out _));
     }
 }
