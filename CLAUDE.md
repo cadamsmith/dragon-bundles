@@ -41,9 +41,8 @@ BundleProvider<T> : IFileProvider (abstract)
 ├── StyleBundleProvider   — serves /bundles/css/*.min.css
 └── ScriptBundleProvider  — serves /bundles/js/*.min.js
 
-BundleTagHelper<TProvider, TBundle> : TagHelper (abstract)
-├── StyleTagHelper
-└── ScriptTagHelper
+StyleTagHelper : TagHelper   (sealed, no shared base)
+ScriptTagHelper : TagHelper  (sealed, no shared base)
 
 BundleConfigurator : IBundleConfigurator
 ```
@@ -81,7 +80,7 @@ Uses **NUglify** (`Uglify.Css` / `Uglify.Js`) on both TFMs.
 
 CSS files are preprocessed by `StyleBundleProvider.TransformFileContent()` before concatenation: relative `url()` references are rewritten to absolute paths so stylesheets from different directories compose correctly after bundling.
 
-JS files are separated by `;\n` before concatenation (`ScriptBundleProvider.ConcatenationToken`) to guard against ASI hazards at file boundaries.
+JS files are separated by `";" + Environment.NewLine` before concatenation (`ScriptBundleProvider.ConcatenationToken`) to guard against ASI hazards at file boundaries.
 
 ### JS source maps
 

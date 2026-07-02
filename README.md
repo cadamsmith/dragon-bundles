@@ -10,7 +10,7 @@ In development, source files are served individually for easy debugging. In prod
 - **Kills WebGrease on classic ASP.NET.** `System.Web.Optimization` still ships the abandoned WebGrease minifier, which struggles with modern CSS/JS. DragonBundles drops in [NUglify](https://github.com/trullock/NUglify) as a replacement with no other code changes.
 - **Secure by default.** Production bundles are emitted with a [Subresource Integrity](https://developer.mozilla.org/en-US/docs/Web/Security/Subresource_Integrity) hash and `crossorigin` attribute automatically.
 - **Zero build step, zero files on disk.** Bundles are built in-memory at startup and served through the pipeline. No node, no webpack, no generated artifacts to commit.
-- **Automatic cache busting and hot reload.** Content-hash `?v=` suffixes update whenever sources change, and source files are watched and re-minified without a restart.
+- **Automatic cache busting and hot reload.** Outside Development, content-hash `?v=` suffixes update whenever sources change, and source files are watched and re-minified without a restart.
 
 ## installation
 
@@ -28,6 +28,27 @@ This is what DragonBundles is built for. Because bundle names are identical acro
 | render | `@Html.StyleBundle("site")` | `<style-bundle name="site">` |
 
 The bundle name (`"site"`) never changes, so your migration is confined to the registration and rendering calls — everything referencing bundles by name keeps working.
+
+## feature parity
+
+Both builds share one API and produce the same production output shape (fingerprinted, minified, SRI-protected bundles). Where a capability is inherited from the host framework rather than implemented by DragonBundles, that's noted.
+
+| Feature | classic ASP.NET (net48) | ASP.NET Core (net8 / net10) |
+|---|---|---|
+| Registration API | `AddStyleBundle` / `AddScriptBundle` | `AddStyleBundle` / `AddScriptBundle` |
+| Rendering API | `@Html.StyleBundle` / `@Html.ScriptBundle` | `<style-bundle>` / `<script-bundle>` tag helpers |
+| Minifier | NUglify (replaces WebGrease) | NUglify |
+| Global minification settings | `ConfigureBundling` | `AddBundling` |
+| Dev vs. prod switch | `BundleTable.EnableOptimizations` | `IWebHostEnvironment` (Development) |
+| Minification timing | request time, cached by System.Web | startup |
+| Content-hash cache busting (`?v=`) | ✓ (System.Web) | ✓ |
+| Subresource Integrity + `crossorigin` | ✓ | ✓ |
+| JS source maps | ✓ | ✓ |
+| ASI-safe JS concatenation | ✓ | ✓ |
+| CSS relative `url()` rebasing | ✓ (`CssRewriteUrlTransform`) | ✓ (custom rebasing) |
+| Hot reload on source change | ✓ (System.Web cache invalidation) | ✓ (file watcher, non-Development) |
+| Glob patterns in file lists | System.Web native wildcards | ✓ recursive (`**`) |
+| Files written to disk | none | none |
 
 ## classic asp.net / system.web (.net framework 4.8)
 
