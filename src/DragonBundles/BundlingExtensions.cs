@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.StaticFiles;
+
 namespace DragonBundles;
 
 /// <summary>Extension methods for registering DragonBundles with ASP.NET Core.</summary>
@@ -23,12 +25,21 @@ public static class BundlingExtensions
 
         configure(new BundleConfigurator(styles, scripts));
 
+        FileExtensionContentTypeProvider contentTypeProvider = new();
+        contentTypeProvider.Mappings[".map"] = "application/json";
+
         app.UseStaticFiles(new StaticFileOptions
         {
             FileProvider = new CompositeFileProvider(styles, scripts, webEnv.WebRootFileProvider),
+            ContentTypeProvider = contentTypeProvider,
             OnPrepareResponse = ctx =>
             {
-                if (!webEnv.IsDevelopment() && ctx.Context.Request.Path.StartsWithSegments("/bundles"))
+                // Source maps are named after the bundle, not content-hashed, so they must not
+                // be cached immutably — the minified file they belong to is still fingerprinted.
+                bool isSourceMap = ctx.Context.Request.Path.Value?.EndsWith(".map", StringComparison.Ordinal) == true;
+                if (!webEnv.IsDevelopment()
+                    && ctx.Context.Request.Path.StartsWithSegments("/bundles")
+                    && !isSourceMap)
                 {
                     ctx.Context.Response.Headers.CacheControl = "public, max-age=31536000, immutable";
                 }
