@@ -1,4 +1,7 @@
 <Solution>
+  <Folder Name="/bench/">
+    <Project Path="bench/MinifyComparison/MinifyComparison.csproj" />
+  </Folder>
   <Folder Name="/docs/">
     <File Path="CLAUDE.md" />
     <File Path="CODE_OF_CONDUCT.md" />
