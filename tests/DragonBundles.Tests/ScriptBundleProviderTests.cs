@@ -481,4 +481,77 @@ public class ScriptBundleProviderTests : IDisposable
         Assert.NotEqual(initialContent, updatedContent);
         Assert.Contains("y", updatedContent);
     }
+
+    [Fact]
+    public async Task RebuildBundle_UnderRapidConcurrentChanges_ConvergesWithoutCorruptionOrDeadlock()
+    {
+        WriteJsFile("/js/app.js", "var v = 0;");
+        using PhysicalFileProvider fileProvider = new(_webRoot);
+
+        IWebHostEnvironment env = Substitute.For<IWebHostEnvironment>();
+        env.EnvironmentName.Returns(Environments.Production);
+        env.WebRootPath.Returns(_webRoot);
+        env.WebRootFileProvider.Returns(fileProvider);
+
+        ScriptBundleProvider provider = new(env, new BundlingOptions());
+        provider.Add("app", "/js/app.js");
+
+        // A reader hammers the served bundle while rebuilds run. MinifiedContent is swapped by
+        // reference, so every read must be either empty or a complete, valid bundle -- never torn.
+        using CancellationTokenSource cts = new();
+        Exception? readerError = null;
+        Task reader = Task.Run(() =>
+        {
+            try
+            {
+                while (!cts.Token.IsCancellationRequested)
+                {
+                    IFileInfo info = provider.GetFileInfo("/bundles/js/app.min.js");
+                    using Stream stream = info.CreateReadStream();
+                    string content = new StreamReader(stream).ReadToEnd();
+                    if (content.Length > 0)
+                    {
+                        Assert.StartsWith("var v=", content);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                readerError = ex;
+            }
+        });
+
+        // Rapid successive source changes trigger overlapping rebuilds (serialized by _rebuildLock).
+        const int finalValue = 40;
+        for (int i = 1; i <= finalValue; i++)
+        {
+            WriteJsFile("/js/app.js", $"var v = {i};");
+            await Task.Delay(5);
+        }
+
+        // A final settle write with no concurrent writer guarantees one last uncontended rebuild,
+        // so an IOException swallowed mid-burst can't leave the bundle permanently stale.
+        await Task.Delay(100);
+        WriteJsFile("/js/app.js", $"var v = {finalValue};");
+
+        string latest = string.Empty;
+        Stopwatch sw = Stopwatch.StartNew();
+        while (sw.Elapsed.TotalSeconds < 10)
+        {
+            IFileInfo info = provider.GetFileInfo("/bundles/js/app.min.js");
+            using Stream stream = info.CreateReadStream();
+            latest = new StreamReader(stream).ReadToEnd();
+            if (latest.Contains($"var v={finalValue}"))
+            {
+                break;
+            }
+            await Task.Delay(50);
+        }
+
+        cts.Cancel();
+        await reader;
+
+        Assert.Null(readerError);                          // no torn read / exception under concurrency
+        Assert.Contains($"var v={finalValue}", latest);    // converged to the final source (no missed rebuild)
+    }
 }
