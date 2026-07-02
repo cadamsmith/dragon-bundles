@@ -12,6 +12,29 @@ In development, source files are served individually for easy debugging. In prod
 - **Zero build step, zero files on disk.** Bundles are built in-memory at startup and served through the pipeline. No node, no webpack, no generated artifacts to commit.
 - **Automatic cache busting and hot reload.** Outside Development, content-hash `?v=` suffixes update whenever sources change, and source files are watched and re-minified without a restart.
 
+<div>
+
+<pre>
+                                                       ____________
+                                 (`-..________....---''  ____..._.-`
+                                  \\`._______.._,.---'''     ,'
+                                  ; )`.      __..-'`-.      /
+                                 / /     _.-' _,.;;._ `-._,'
+                                / /   ,-' _.-'  //   ``--._``._
+                              ,','_.-' ,-' _.- (( =-    -. `-._`-._____
+                            ,;.''__..-'   _..--.\\.--'````--.._``-.`-._`.
+             _          |\,' .-''        ```-'`---'`-...__,._  ``-.`-.`-.`.
+  _     _.-,'(__)\__)\-'' `     ___  .          `     \      `--._
+,',)---' /|)          `     `      ``-.   `     /     /     `     `-.
+\_____--.  '`  `               __..-.  \     . (   < _...-----..._   `.
+ \_,--..__. \\ .-`.\----'';``,..-.__ \  \      ,`_. `.,-'`--'`---''`.  )
+           `.\`.\  `_.-..' ,'   _,-..'  /..,-''(, ,' ; ( _______`___..'__
+                   ((,(,__(    ((,(,__,'  ``'-- `'`.(\  `.,..______   SSt
+                                                      ``--------..._``--.__
+</pre>
+
+</div>
+
 ## installation
 
 ```
