@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Compares NUglify (what DragonBundles uses) against WebGrease's minifier
+    (the engine System.Web.Optimization ships, via its bundled Microsoft.Ajax.Utilities).
+    Standalone diagnostic: intentionally NOT in DragonBundles.slnx, so `dotnet build`/pack/CI
+    ignore it. Run it directly with `dotnet run` from this folder. IsPackable=false is a
+    safety net in case it is ever re-added to the solution.
+    WebGrease is a .NET Framework package loaded via the net10 compatibility shim (NU1701).
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RollForward>LatestMajor</RollForward>
+    <NoWarn>NU1701</NoWarn>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NUglify" Version="1.21.17" />
+    <PackageReference Include="WebGrease" Version="1.6.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="corpus\**\*" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

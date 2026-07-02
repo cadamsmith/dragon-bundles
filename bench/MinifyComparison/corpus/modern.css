@@ -1,0 +1,17 @@
+:root {
+    --primary: #3498db;
+    --gap: 16px;
+}
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: var(--gap);
+    padding: calc(var(--gap) * 2);
+}
+.title {
+    color: var(--primary);
+    font-size: clamp(1rem, 2.5vw, 2rem);
+}
+:is(.card, .panel):hover {
+    box-shadow: 0 0 0 2px var(--primary);
+}
