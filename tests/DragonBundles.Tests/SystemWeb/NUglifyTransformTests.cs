@@ -1,4 +1,6 @@
 using System.Web.Optimization;
+using NUglify.Css;
+using NUglify.JavaScript;
 
 namespace DragonBundles.Tests.SystemWeb;
 
@@ -37,6 +39,30 @@ public class NUglifyTransformTests
 
         Exception? ex = Record.Exception(() => transform.Process(null!, response));
         Assert.Null(ex);
+    }
+
+    [Fact]
+    public void NUglifyStyleTransform_Process_HonorsCssSettings()
+    {
+        BundleResponse kept = MakeResponse("/*! brand */\n.x { color: red; }");
+        new NUglifyStyleTransform(new CssSettings { CommentMode = CssComment.Important }).Process(null!, kept);
+        Assert.Contains("/*! brand */", kept.Content);
+
+        BundleResponse stripped = MakeResponse("/*! brand */\n.x { color: red; }");
+        new NUglifyStyleTransform(new CssSettings { CommentMode = CssComment.None }).Process(null!, stripped);
+        Assert.DoesNotContain("/*! brand */", stripped.Content);
+    }
+
+    [Fact]
+    public void NUglifyScriptTransform_Process_HonorsCodeSettings()
+    {
+        BundleResponse kept = MakeResponse("/*! license */\nfunction f() { return 1; }");
+        new NUglifyScriptTransform(new CodeSettings { PreserveImportantComments = true }).Process(null!, kept);
+        Assert.Contains("/*! license */", kept.Content);
+
+        BundleResponse stripped = MakeResponse("/*! license */\nfunction f() { return 1; }");
+        new NUglifyScriptTransform(new CodeSettings { PreserveImportantComments = false }).Process(null!, stripped);
+        Assert.DoesNotContain("/*! license */", stripped.Content);
     }
 
     [Fact]

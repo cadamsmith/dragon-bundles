@@ -6,8 +6,14 @@ namespace DragonBundles;
 public static class BundlingExtensions
 {
     /// <summary>Registers DragonBundles services with the dependency injection container.</summary>
-    public static IServiceCollection AddBundling(this IServiceCollection services)
+    /// <param name="services">The service collection.</param>
+    /// <param name="configure">Optional callback to configure minification settings (see <see cref="BundlingOptions"/>).</param>
+    public static IServiceCollection AddBundling(this IServiceCollection services, Action<BundlingOptions>? configure = null)
     {
+        BundlingOptions options = new();
+        configure?.Invoke(options);
+
+        services.AddSingleton(options);
         services.AddSingleton<StyleBundleProvider>();
         services.AddSingleton<ScriptBundleProvider>();
         return services;

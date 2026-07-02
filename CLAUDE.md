@@ -22,10 +22,11 @@ The two TFMs have entirely separate source files. `src/DragonBundles/` contains 
 
 ### public api surface — net10.0
 
-Only four types are public — everything else is `internal`:
+Only five types are public — everything else is `internal`:
 
 - `IBundleConfigurator` — fluent interface for registering bundles (`AddStyleBundle`, `AddScriptBundle`)
-- `BundlingExtensions` — `IServiceCollection.AddBundling()` and `IApplicationBuilder.UseBundling(Action<IBundleConfigurator>)`
+- `BundlingExtensions` — `IServiceCollection.AddBundling(Action<BundlingOptions>?)` and `IApplicationBuilder.UseBundling(Action<IBundleConfigurator>)`
+- `BundlingOptions` — global NUglify minification settings (`ScriptSettings` / `StyleSettings`), configured via `AddBundling`
 - `StyleTagHelper` — `<style-bundle name="...">` Razor tag helper
 - `ScriptTagHelper` — `<script-bundle name="...">` Razor tag helper
 
@@ -58,10 +59,11 @@ BundleConfigurator : IBundleConfigurator
 
 ### public api surface — net48
 
-Two types are public:
+Three types are public:
 
-- `BundleCollectionExtensions` — `BundleCollection.AddStyleBundle(name, files...)` and `AddScriptBundle(name, files...)`. Registers bundles at `~/bundles/css/{name}` and `~/bundles/js/{name}` with NUglify transforms.
+- `BundleCollectionExtensions` — `BundleCollection.AddStyleBundle(name, files...)` and `AddScriptBundle(name, files...)`, plus `ConfigureBundling(Action<BundlingOptions>)` for global NUglify settings (mirrors ASP.NET Core's `AddBundling`; options are held per-`BundleCollection` via a `ConditionalWeakTable` and read when bundles are registered). Registers bundles at `~/bundles/css/{name}` and `~/bundles/js/{name}` with NUglify transforms.
 - `HtmlHelperExtensions` — `@Html.StyleBundle(name)` and `@Html.ScriptBundle(name)`. Wraps `Styles.Render` / `Scripts.Render` with the internal virtual path.
+- `BundlingOptions` — shared, TFM-neutral minification settings type (also public on net10.0), configured here via `ConfigureBundling`.
 
 Two types are internal:
 

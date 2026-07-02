@@ -2,6 +2,7 @@ using System.Diagnostics;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.FileProviders;
 using NSubstitute;
+using NUglify.Css;
 
 namespace DragonBundles.Tests;
 
@@ -12,13 +13,13 @@ public class StyleBundleProviderTests : IDisposable
     public StyleBundleProviderTests() => Directory.CreateDirectory(_webRoot);
     public void Dispose() => Directory.Delete(_webRoot, recursive: true);
 
-    StyleBundleProvider MakeProvider(string envName)
+    StyleBundleProvider MakeProvider(string envName, BundlingOptions? options = null)
     {
         IWebHostEnvironment? env = Substitute.For<IWebHostEnvironment>();
         env.EnvironmentName.Returns(envName);
         env.WebRootPath.Returns(_webRoot);
         env.WebRootFileProvider.Returns(new NullFileProvider());
-        return new StyleBundleProvider(env);
+        return new StyleBundleProvider(env, options ?? new BundlingOptions());
     }
 
     void WriteCssFile(string relativePath, string content)
@@ -26,6 +27,49 @@ public class StyleBundleProviderTests : IDisposable
         string full = Path.Combine(_webRoot, relativePath.TrimStart('/'));
         Directory.CreateDirectory(Path.GetDirectoryName(full)!);
         File.WriteAllText(full, content);
+    }
+
+    static string ReadFileInfo(IFileInfo fileInfo)
+    {
+        using Stream stream = fileInfo.CreateReadStream();
+        return new StreamReader(stream).ReadToEnd();
+    }
+
+    [Fact]
+    public void Add_InProduction_PreservesImportantComments_WhenStyleSettingIsImportant()
+    {
+        WriteCssFile("/css/site.css", "/*! brand */\n.x { color: red; }");
+        BundlingOptions options = new();
+        options.StyleSettings.CommentMode = CssComment.Important;
+        StyleBundleProvider provider = MakeProvider(Environments.Production, options);
+
+        provider.Add("site", "/css/site.css");
+
+        Assert.Contains("/*! brand */", ReadFileInfo(provider.GetFileInfo("/bundles/css/site.min.css")));
+    }
+
+    [Fact]
+    public void Add_InProduction_StripsComments_WhenStyleSettingIsNone()
+    {
+        WriteCssFile("/css/site.css", "/*! brand */\n.x { color: red; }");
+        BundlingOptions options = new();
+        options.StyleSettings.CommentMode = CssComment.None;
+        StyleBundleProvider provider = MakeProvider(Environments.Production, options);
+
+        provider.Add("site", "/css/site.css");
+
+        Assert.DoesNotContain("/*! brand */", ReadFileInfo(provider.GetFileInfo("/bundles/css/site.min.css")));
+    }
+
+    [Fact]
+    public void GetFileInfo_ResolvesBundleNameContainingDot()
+    {
+        WriteCssFile("/css/bootstrap.grid.css", ".x { color: red; }");
+        StyleBundleProvider provider = MakeProvider(Environments.Production);
+
+        provider.Add("bootstrap.grid", "/css/bootstrap.grid.css");
+
+        Assert.True(provider.GetFileInfo("/bundles/css/bootstrap.grid.min.css").Exists);
     }
 
     [Fact]
@@ -360,7 +404,7 @@ public class StyleBundleProviderTests : IDisposable
         env.WebRootPath.Returns(_webRoot);
         env.WebRootFileProvider.Returns(fileProvider);
 
-        StyleBundleProvider provider = new(env);
+        StyleBundleProvider provider = new(env, new BundlingOptions());
         provider.Add("site", "/css/site.css");
 
         IFileInfo initial = provider.GetFileInfo("/bundles/css/site.min.css");

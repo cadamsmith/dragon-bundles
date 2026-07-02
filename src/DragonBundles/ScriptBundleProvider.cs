@@ -2,7 +2,7 @@ using NUglify.JavaScript;
 
 namespace DragonBundles;
 
-sealed class ScriptBundleProvider(IWebHostEnvironment env) : BundleProvider<ScriptBundle>(env, "/bundles/js/")
+sealed class ScriptBundleProvider(IWebHostEnvironment env, BundlingOptions options) : BundleProvider<ScriptBundle>(env, "/bundles/js/")
 {
     protected override string Extension => "js";
     protected override string ConcatenationToken => ";" + Environment.NewLine;
@@ -17,7 +17,8 @@ sealed class ScriptBundleProvider(IWebHostEnvironment env) : BundleProvider<Scri
         DeferredSourceMap sourceMap = new(inner);
         sourceMap.StartPackage($"{bundle.Name}.min.js", mapFileName);
 
-        CodeSettings settings = new() { SymbolsMap = sourceMap };
+        CodeSettings settings = options.ScriptSettings.Clone();
+        settings.SymbolsMap = sourceMap;
 
         StringBuilder output = new();
         bool hasMappings = false;
