@@ -15,10 +15,10 @@ dotnet pack                                         # produce the NuGet .nupkg
 
 DragonBundles is a multi-targeted NuGet library supporting two runtimes:
 
-- **`net10.0`** — ASP.NET Core. Bundles CSS/JS at startup and serves them through static file middleware via a custom `IFileProvider`.
+- **`net8.0` / `net10.0`** — ASP.NET Core. Bundles CSS/JS at startup and serves them through static file middleware via a custom `IFileProvider`. Both TFMs compile from the same source.
 - **`net48`** — Classic ASP.NET (System.Web). Integrates with `System.Web.Optimization` as a drop-in, replacing WebGrease with NUglify.
 
-The two TFMs have entirely separate source files. `src/DragonBundles/` contains the net10.0 implementation; `src/DragonBundles/SystemWeb/` contains the net48 implementation. MSBuild ItemGroup conditions in the `.csproj` select the right set per TFM.
+The runtimes have entirely separate source files. `src/DragonBundles/` contains the ASP.NET Core implementation (net8.0 + net10.0); `src/DragonBundles/SystemWeb/` contains the net48 implementation. MSBuild ItemGroup conditions in the `.csproj` select the right set per TFM.
 
 ### public api surface — net10.0
 
@@ -83,7 +83,7 @@ JS files are separated by `;\n` before concatenation (`ScriptBundleProvider.Conc
 
 ### tests
 
-Tests live in `tests/DragonBundles.Tests/`. Internal types are exposed via `InternalsVisibleTo`. The project also multi-targets `net10.0;net48` using the same conditional compile pattern as the main library.
+Tests live in `tests/DragonBundles.Tests/`. Internal types are exposed via `InternalsVisibleTo`. The project also multi-targets `net8.0;net10.0;net48` using the same conditional compile pattern as the main library.
 
 **net10.0 tests** (root of `tests/DragonBundles.Tests/`):
 - `StyleBundleProviderTests` / `ScriptBundleProviderTests` — provider logic. Tests that write files use a per-test temp directory cleaned up via `IDisposable`.
@@ -98,4 +98,4 @@ net48 tests compile on Mac but only run on Windows. CI runs them on a `windows-l
 
 ### target frameworks
 
-`net10.0;net48`. ASP.NET Core types come from `<FrameworkReference Include="Microsoft.AspNetCore.App" />` (net10.0 only). System.Web types come from `Microsoft.AspNet.Web.Optimization` and `Microsoft.AspNet.Mvc` NuGet packages (net48 only). `Microsoft.NETFramework.ReferenceAssemblies` enables cross-compilation of the net48 target on Mac.
+`net8.0;net10.0;net48`. The ASP.NET Core implementation compiles for both `net8.0` and `net10.0` from the same source; ASP.NET Core types come from the versionless `<FrameworkReference Include="Microsoft.AspNetCore.App" />` (net8.0 + net10.0). System.Web types come from `Microsoft.AspNet.Web.Optimization` and `Microsoft.AspNet.Mvc` NuGet packages (net48 only). `Microsoft.NETFramework.ReferenceAssemblies` enables cross-compilation of the net48 target on Mac.

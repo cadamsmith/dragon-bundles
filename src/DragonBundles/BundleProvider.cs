@@ -8,7 +8,7 @@ abstract class BundleProvider<T>(IWebHostEnvironment env, string bundleDirectory
     readonly IFileProvider _webRootFileProvider = env.WebRootFileProvider;
     protected readonly string WebRootPath = env.WebRootPath;
 
-    readonly Lock _rebuildLock = new();
+    readonly object _rebuildLock = new();
 
     protected abstract string Extension { get; }
     protected virtual string ConcatenationToken => Environment.NewLine;

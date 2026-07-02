@@ -22,7 +22,7 @@ dotnet add package DragonBundles
 
 This is what DragonBundles is built for. Because bundle names are identical across both runtimes, upgrading is a mechanical swap rather than a rewrite:
 
-| | classic ASP.NET (net48) | ASP.NET Core (net10) |
+| | classic ASP.NET (net48) | ASP.NET Core (net8 / net10) |
 |---|---|---|
 | register | `bundles.AddStyleBundle("site", ...)` | `bundles.AddStyleBundle("site", ...)` |
 | render | `@Html.StyleBundle("site")` | `<style-bundle name="site">` |
@@ -76,7 +76,7 @@ bundles.ConfigureBundling(o =>
 });
 ```
 
-## asp.net core (.net 10)
+## asp.net core (.net 8 / .net 10)
 
 ### setup
 
@@ -161,5 +161,6 @@ builder.Services.AddBundling(o =>
 
 | Target | Runtime |
 |---|---|
+| `net8.0` | .NET 8, ASP.NET Core |
 | `net10.0` | .NET 10, ASP.NET Core |
 | `net48` | .NET Framework 4.8, ASP.NET MVC 5 |
