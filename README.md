@@ -65,6 +65,8 @@ Dev/prod rendering is controlled by `BundleTable.EnableOptimizations` — indivi
 
 Script bundles emit a [source map](https://developer.mozilla.org/en-US/docs/Glossary/Source_map) referenced from the minified file (`//# sourceMappingURL={name}.min.js.map`) and served at `~/bundles/js/{name}.min.js.map`, so browser devtools resolve the bundle back to the original source files — parity with the ASP.NET Core target. `AddScriptBundle` registers the route that serves it, so no extra wiring is needed.
 
+When optimizations are enabled, `@Html.StyleBundle` / `@Html.ScriptBundle` render the bundle tag with a [Subresource Integrity](https://developer.mozilla.org/en-US/docs/Web/Security/Subresource_Integrity) hash and `crossorigin="anonymous"` (`integrity="sha384-..."` over the exact served bytes) — matching the ASP.NET Core tag helpers. In debug (optimizations off), they fall back to plain per-file tags with no SRI. The hash assumes bundles are served as UTF-8 (the default); a non-UTF-8 `<globalization responseEncoding>` would change the served bytes and break the integrity check.
+
 To control NUglify's output, call `ConfigureBundling` before registering bundles — the same
 global model as ASP.NET Core's `AddBundling`:
 
