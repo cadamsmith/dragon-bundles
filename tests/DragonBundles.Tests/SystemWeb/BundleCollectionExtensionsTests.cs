@@ -110,14 +110,19 @@ public class BundleCollectionExtensionsTests
     [Fact]
     public void ConfigureBundling_DoesNotLeakAcrossCollections()
     {
-        BundleCollection configured = MakeBundles();
-        configured.ConfigureBundling(o => o.ScriptSettings.PreserveImportantComments = true);
+        // Configure two collections with opposite settings; each must keep its own.
+        const string source = "/*! license */\nfunction f() { return 1; }";
 
-        BundleCollection other = MakeBundles();
-        other.AddScriptBundle("app", "~/Scripts/app.js");
+        BundleCollection keeps = MakeBundles();
+        keeps.ConfigureBundling(o => o.ScriptSettings.PreserveImportantComments = true);
+        keeps.AddScriptBundle("app", "~/Scripts/app.js");
 
-        string output = RunTransform(other.GetBundleFor("~/bundles/js/app")!, "/*! license */\nfunction f() { return 1; }");
-        Assert.DoesNotContain("/*! license */", output);
+        BundleCollection strips = MakeBundles();
+        strips.ConfigureBundling(o => o.ScriptSettings.PreserveImportantComments = false);
+        strips.AddScriptBundle("app", "~/Scripts/app.js");
+
+        Assert.Contains("/*! license */", RunTransform(keeps.GetBundleFor("~/bundles/js/app")!, source));
+        Assert.DoesNotContain("/*! license */", RunTransform(strips.GetBundleFor("~/bundles/js/app")!, source));
     }
 
     [Fact]
