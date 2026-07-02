@@ -111,7 +111,7 @@ abstract class BundleProvider<T>(IWebHostEnvironment env, string bundleDirectory
 
         byte[] bytes = Encoding.UTF8.GetBytes(bundle.MinifiedContent);
         bundle.Version = Convert.ToHexString(SHA256.HashData(bytes))[..8].ToLowerInvariant();
-        bundle.Integrity = "sha384-" + Convert.ToBase64String(SHA384.HashData(bytes));
+        bundle.Integrity = SriHash.Compute(bytes);
     }
 
     public List<string> GetSourceUrls(string name) =>

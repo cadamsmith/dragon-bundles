@@ -38,9 +38,10 @@
     <Compile Remove="**\*.cs" />
     <Compile Include="SystemWeb\**\*.cs" />
     <Compile Include="BundlingOptions.cs" />
-    <!-- TFM-neutral source-map helpers shared with the ASP.NET Core target -->
+    <!-- TFM-neutral helpers shared with the ASP.NET Core target -->
     <Compile Include="ScriptMapMinifier.cs" />
     <Compile Include="DeferredSourceMap.cs" />
+    <Compile Include="SriHash.cs" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net8.0' Or '$(TargetFramework)' == 'net10.0'">

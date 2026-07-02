@@ -62,7 +62,7 @@ BundleConfigurator : IBundleConfigurator
 Three types are public:
 
 - `BundleCollectionExtensions` — `BundleCollection.AddStyleBundle(name, files...)` and `AddScriptBundle(name, files...)`, plus `ConfigureBundling(Action<BundlingOptions>)` for global NUglify settings (mirrors ASP.NET Core's `AddBundling`; options are held per-`BundleCollection` via a `ConditionalWeakTable` and read when bundles are registered). Registers bundles at `~/bundles/css/{name}` and `~/bundles/js/{name}` with NUglify transforms.
-- `HtmlHelperExtensions` — `@Html.StyleBundle(name)` and `@Html.ScriptBundle(name)`. Wraps `Styles.Render` / `Scripts.Render` with the internal virtual path.
+- `HtmlHelperExtensions` — `@Html.StyleBundle(name)` and `@Html.ScriptBundle(name)`. When optimizations are enabled, hand-builds the bundle tag with `integrity="sha384-..." crossorigin="anonymous" data-bundle="{name}"` (matching the ASP.NET Core tag helpers); when off, falls back to `Styles.Render` / `Scripts.Render` (per-file tags, no SRI).
 - `BundlingOptions` — shared, TFM-neutral minification settings type (also public on net10.0), configured here via `ConfigureBundling`.
 
 Internal types:
@@ -90,6 +90,13 @@ Script bundles emit a V3 source map plus a trailing `//# sourceMappingURL={name}
 - net10.0: `ScriptBundleProvider.Minify()` builds `(sourceUrl, content)` pairs from `env.WebRootPath` and calls the helper; the map is stored on `bundle.SourceMap` and served in-memory at `{name}.min.js.map`.
 - net48: `NUglifyScriptTransform` rebuilds the pairs from `BundleResponse.Files` (via `BundleFile.ApplyTransforms()` + `IncludedVirtualPath`) — the transform is handed already-concatenated content, so per-file info must come from `Files` — calls the helper, and stashes the map in the static in-memory `SourceMapStore` keyed by bundle name. `AddScriptBundle` registers one `System.Web.Routing.Route` (inserted at index 0, once) mapping `bundles/js/{name}.min.js.map` to `SourceMapHandler`, which serves the stored map as `application/json` with non-immutable caching. When `BundleResponse.Files` is unavailable (e.g. a unit test setting `Content` directly), the transform falls back to minifying the combined content with no map.
 
+### subresource integrity (SRI)
+
+Both TFMs emit `integrity="sha384-<base64>" crossorigin="anonymous"` on production bundle tags. The `sha384-` computation lives in the TFM-neutral `SriHash.Compute(...)` (compiled into net48 via explicit `Compile Include`; uses `SHA384.HashData` on net8/net10 and `SHA384.Create().ComputeHash` on net48 behind `#if NET5_0_OR_GREATER` since the static API is .NET 5+).
+
+- net10.0: `BundleProvider.UpdateHashes()` hashes `bundle.MinifiedContent` at startup into `bundle.Integrity`; tag helpers stamp it.
+- net48: `HtmlHelperExtensions` hashes the served bytes at render time — `bundle.GenerateBundleResponse(context).Content`, which runs the full transform pipeline (so the hash covers the JS `sourceMappingURL` comment) and reuses the same server cache the bundle handler serves from. Hand-builds the tag with `SriHash.Compute(...)`. `BuildLinkTag` / `BuildScriptTag` are the tag formatters (host-free, unit-tested). Falls back to `Styles.Render` / `Scripts.Render` when `BundleTable.EnableOptimizations` is false or the bundle is unregistered.
+
 ### tests
 
 Tests live in `tests/DragonBundles.Tests/`. Internal types are exposed via `InternalsVisibleTo`. The project also multi-targets `net8.0;net10.0;net48` using the same conditional compile pattern as the main library.
@@ -99,10 +106,13 @@ Tests live in `tests/DragonBundles.Tests/`. Internal types are exposed via `Inte
 - `StyleTagHelperTests` / `ScriptTagHelperTests` — tag helper HTML output in dev vs production. Use real `TagHelperContext`/`TagHelperOutput` — no mocking needed.
 - `BundlingIntegrationTests` — end-to-end HTTP tests using `TestServer` via `BundlingTestFixture` (`IClassFixture`). Verifies bundles are served at the correct URLs with correct content types and minified content; also confirms static files still pass through the `CompositeFileProvider`.
 - `ScriptMapMinifierTests` — host-independent contract for the shared `ScriptMapMinifier` (sourceMappingURL append, per-source listing, pre-minified passthrough, no-map when all inputs are pre-minified). Primary local guard for source-map behavior on both TFMs since the net48 transform's map path only runs on a live host.
+- `SriHashTests` — host-independent contract for the shared `SriHash` (`sha384-<base64>`, matches an independent SHA-384, deterministic/content-sensitive). Guards the SRI algorithm for both TFMs.
 
 **net48 tests** (`tests/DragonBundles.Tests/SystemWeb/`):
 - `NUglifyTransformTests` — `IBundleTransform` implementations (these hit the `Files == null` fallback, so the map path is covered by `ScriptMapMinifierTests`, not here) plus `SourceMapStore` round-trip. Uses a real `BundleResponse` with `null` context (transforms don't access context).
 - `BundleCollectionExtensionsTests` — verifies virtual path registration and NUglify transform wiring via `GetBundleFor()`. Uses a fresh `new BundleCollection()` per test (never `BundleTable.Bundles`).
+- `SourceMapServingTests` — host-free coverage of the source-map handler (serve/404) and the route `AddScriptBundle` registers.
+- `HtmlHelperExtensionsTests` — host-free coverage of the SRI tag format (`BuildLinkTag` / `BuildScriptTag`). The render-time integrity computation needs a live host and is verified on Windows.
 
 net48 tests compile on Mac but only run on Windows. CI runs them on a `windows-latest` GitHub Actions runner.
 
