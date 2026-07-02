@@ -1,4 +1,5 @@
 using System.Runtime.CompilerServices;
+using System.Web.Routing;
 
 namespace DragonBundles;
 
@@ -44,14 +45,36 @@ public static class BundleCollectionExtensions
         {
             ScriptBundle bundle = new($"~/bundles/js/{name}");
             bundle.Transforms.Clear();
-            bundle.Transforms.Add(new NUglifyScriptTransform(_optionsTable.GetOrCreateValue(bundles).ScriptSettings));
+            bundle.Transforms.Add(new NUglifyScriptTransform(name, _optionsTable.GetOrCreateValue(bundles).ScriptSettings));
             foreach (string file in files)
             {
                 bundle.Include(file);
             }
 
             bundles.Add(bundle);
+            EnsureSourceMapRoute();
             return bundles;
+        }
+    }
+
+    // 0 until the source-map route has been registered, 1 afterwards.
+    static int _sourceMapRouteRegistered;
+
+    // Registers a single route that serves every JS bundle's source map at
+    // `bundles/js/{name}.min.js.map` — the path the browser resolves from the bundle's
+    // `//# sourceMappingURL={name}.min.js.map` comment. Inserted at index 0 so it is matched before
+    // a catch-all MVC route (which would otherwise bind it as controller=bundles/action=js).
+    static void EnsureSourceMapRoute()
+    {
+        if (Interlocked.CompareExchange(ref _sourceMapRouteRegistered, 1, 0) != 0)
+        {
+            return;
+        }
+
+        Route route = new("bundles/js/{name}.min.js.map", new SourceMapRouteHandler());
+        using (RouteTable.Routes.GetWriteLock())
+        {
+            RouteTable.Routes.Insert(0, route);
         }
     }
 }

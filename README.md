@@ -63,6 +63,8 @@ In Razor views, add `@using DragonBundles` (or add it to `Web.config`), then:
 
 Dev/prod rendering is controlled by `BundleTable.EnableOptimizations` — individual files in debug, single bundle in release, matching standard `System.Web.Optimization` behavior.
 
+Script bundles emit a [source map](https://developer.mozilla.org/en-US/docs/Glossary/Source_map) referenced from the minified file (`//# sourceMappingURL={name}.min.js.map`) and served at `~/bundles/js/{name}.min.js.map`, so browser devtools resolve the bundle back to the original source files — parity with the ASP.NET Core target. `AddScriptBundle` registers the route that serves it, so no extra wiring is needed.
+
 To control NUglify's output, call `ConfigureBundling` before registering bundles — the same
 global model as ASP.NET Core's `AddBundling`:
 
