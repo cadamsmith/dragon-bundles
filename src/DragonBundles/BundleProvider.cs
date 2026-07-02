@@ -128,9 +128,19 @@ abstract class BundleProvider<T>(IWebHostEnvironment env, string bundleDirectory
         }
 
         string name = subpath[bundleDirectory.Length..].Split('.')[0];
-        return _bundles.TryGetValue(name, out T? bundle)
-            ? new BundleFileInfo(bundle)
-            : new NotFoundFileInfo(subpath);
+        if (!_bundles.TryGetValue(name, out T? bundle))
+        {
+            return new NotFoundFileInfo(subpath);
+        }
+
+        if (subpath.EndsWith(".map", StringComparison.Ordinal))
+        {
+            return bundle.SourceMap.Length > 0
+                ? new BundleFileInfo(bundle.Name, bundle.SourceMap, bundle.LastModified)
+                : new NotFoundFileInfo(subpath);
+        }
+
+        return new BundleFileInfo(bundle.Name, bundle.MinifiedContent, bundle.LastModified);
     }
 
     public IDirectoryContents GetDirectoryContents(string subpath) =>
@@ -139,14 +149,14 @@ abstract class BundleProvider<T>(IWebHostEnvironment env, string bundleDirectory
     public IChangeToken Watch(string filter) =>
         NullChangeToken.Singleton;
 
-    sealed class BundleFileInfo(T bundle) : IFileInfo
+    sealed class BundleFileInfo(string name, string content, DateTimeOffset lastModified) : IFileInfo
     {
         public bool Exists => true;
         public bool IsDirectory => false;
-        public string Name => bundle.Name;
+        public string Name => name;
         public string? PhysicalPath => null;
-        public DateTimeOffset LastModified => bundle.LastModified;
-        public long Length => Encoding.UTF8.GetByteCount(bundle.MinifiedContent);
-        public Stream CreateReadStream() => new MemoryStream(Encoding.UTF8.GetBytes(bundle.MinifiedContent));
+        public DateTimeOffset LastModified => lastModified;
+        public long Length => Encoding.UTF8.GetByteCount(content);
+        public Stream CreateReadStream() => new MemoryStream(Encoding.UTF8.GetBytes(content));
     }
 }

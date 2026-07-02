@@ -1,3 +1,5 @@
+using NUglify.JavaScript;
+
 namespace DragonBundles;
 
 sealed class ScriptBundleProvider(IWebHostEnvironment env) : BundleProvider<ScriptBundle>(env, "/bundles/js/")
@@ -8,13 +10,65 @@ sealed class ScriptBundleProvider(IWebHostEnvironment env) : BundleProvider<Scri
 
     public override void Minify(ScriptBundle bundle)
     {
-        bundle.MinifiedContent = string.Join(ConcatenationToken, bundle.SourceFiles.Select(f =>
+        string mapFileName = $"{bundle.Name}.min.js.map";
+
+        StringWriter mapWriter = new();
+        V3SourceMap inner = new(mapWriter) { MakePathsRelative = false };
+        DeferredSourceMap sourceMap = new(inner);
+        sourceMap.StartPackage($"{bundle.Name}.min.js", mapFileName);
+
+        CodeSettings settings = new() { SymbolsMap = sourceMap };
+
+        StringBuilder output = new();
+        bool hasMappings = false;
+        for (int i = 0; i < bundle.SourceFiles.Count; i++)
         {
-            string content = ReadSourceFile(bundle.Name, f);
-            return f.EndsWith(".min.js", StringComparison.OrdinalIgnoreCase)
-                ? content
-                : Uglify.Js(content).Code;
-        }));
+            string sourceUrl = bundle.SourceFiles[i];
+            string content = ReadSourceFile(bundle.Name, sourceUrl);
+
+            if (sourceUrl.EndsWith(".min.js", StringComparison.OrdinalIgnoreCase))
+            {
+                // Pre-minified: pass through verbatim (no mappings), but keep the map's output
+                // line counter aligned by notifying it of every newline we append.
+                output.Append(content);
+                NotifyNewLines(sourceMap, content);
+            }
+            else
+            {
+                output.Append(Uglify.Js(content, sourceUrl, settings).Code);
+                hasMappings = true;
+            }
+
+            if (i < bundle.SourceFiles.Count - 1)
+            {
+                output.Append(ConcatenationToken);
+                NotifyNewLines(sourceMap, ConcatenationToken);
+            }
+        }
+
+        sourceMap.EndPackage();
+        sourceMap.Dispose(); // flushes the map JSON to mapWriter
+
+        // Only attach a map when at least one file was actually minified; a bundle of only
+        // pre-minified files has no mappings and must pass through verbatim.
+        if (hasMappings)
+        {
+            output.Append(Environment.NewLine).Append("//# sourceMappingURL=").Append(mapFileName);
+            bundle.SourceMap = mapWriter.ToString();
+        }
+
+        bundle.MinifiedContent = output.ToString();
         bundle.LastModified = DateTime.UtcNow;
+    }
+
+    static void NotifyNewLines(DeferredSourceMap sourceMap, string text)
+    {
+        foreach (char c in text)
+        {
+            if (c == '\n')
+            {
+                sourceMap.NewLineInsertedInOutput();
+            }
+        }
     }
 }

@@ -1,5 +1,6 @@
 using System.Net;
 using System.Security.Cryptography;
+using System.Text.Json;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
@@ -108,6 +109,40 @@ public class BundlingIntegrationTests(BundlingTestFixture fixture) : IClassFixtu
         string content = await response.Content.ReadAsStringAsync();
         Assert.Contains("hello", content);
         Assert.Contains("x=1", content);
+    }
+
+    [Fact]
+    public async Task ScriptBundle_SourceMap_IsServedAsJson()
+    {
+        HttpResponseMessage response = await fixture.Client.GetAsync("/bundles/js/app.min.js.map");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal("application/json", response.Content.Headers.ContentType?.MediaType);
+
+        string content = await response.Content.ReadAsStringAsync();
+        using JsonDocument doc = JsonDocument.Parse(content);
+        Assert.Equal(3, doc.RootElement.GetProperty("version").GetInt32());
+    }
+
+    [Fact]
+    public async Task ScriptBundle_Body_ReferencesSourceMap()
+    {
+        HttpResponseMessage response = await fixture.Client.GetAsync("/bundles/js/app.min.js");
+        string content = await response.Content.ReadAsStringAsync();
+        Assert.Contains("//# sourceMappingURL=app.min.js.map", content);
+    }
+
+    [Fact]
+    public async Task ScriptBundle_SourceMap_IsNotCachedImmutable()
+    {
+        HttpResponseMessage response = await fixture.Client.GetAsync("/bundles/js/app.min.js.map");
+        Assert.DoesNotContain("immutable", response.Headers.CacheControl?.ToString() ?? string.Empty);
+    }
+
+    [Fact]
+    public async Task StyleBundle_HasNoSourceMap()
+    {
+        HttpResponseMessage response = await fixture.Client.GetAsync("/bundles/css/site.min.css.map");
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
     [Fact]

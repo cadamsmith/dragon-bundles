@@ -29,6 +29,17 @@ public class StyleBundleProviderTests : IDisposable
     }
 
     [Fact]
+    public void Add_InProduction_DoesNotGenerateSourceMap()
+    {
+        WriteCssFile("/css/site.css", "body { color: red; }");
+        StyleBundleProvider provider = MakeProvider(Environments.Production);
+
+        provider.Add("site", "/css/site.css");
+
+        Assert.False(provider.GetFileInfo("/bundles/css/site.min.css.map").Exists);
+    }
+
+    [Fact]
     public void Add_InProduction_MinifiesBundle()
     {
         WriteCssFile("/css/site.css", "body   {   color:   red;   }");
