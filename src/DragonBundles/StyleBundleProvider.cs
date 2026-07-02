@@ -1,6 +1,6 @@
 namespace DragonBundles;
 
-sealed partial class StyleBundleProvider(IWebHostEnvironment env) : BundleProvider<StyleBundle>(env, "/bundles/css/")
+sealed partial class StyleBundleProvider(IWebHostEnvironment env, BundlingOptions options) : BundleProvider<StyleBundle>(env, "/bundles/css/")
 {
     [GeneratedRegex(@"url\(\s*(['""]?)([^'""\)\s]+)\1\s*\)")]
     private static partial Regex UrlPattern();
@@ -15,7 +15,7 @@ sealed partial class StyleBundleProvider(IWebHostEnvironment env) : BundleProvid
             string content = ReadSourceFile(bundle.Name, f);
             return f.EndsWith(".min.css", StringComparison.OrdinalIgnoreCase)
                 ? content
-                : Uglify.Css(content).Code;
+                : Uglify.Css(content, options.StyleSettings).Code;
         }));
         bundle.LastModified = DateTime.UtcNow;
     }

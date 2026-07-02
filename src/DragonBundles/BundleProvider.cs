@@ -127,13 +127,24 @@ abstract class BundleProvider<T>(IWebHostEnvironment env, string bundleDirectory
             return new NotFoundFileInfo(subpath);
         }
 
-        string name = subpath[bundleDirectory.Length..].Split('.')[0];
-        if (!_bundles.TryGetValue(name, out T? bundle))
+        // Requests are "{name}.min.{ext}" (the bundle) or "{name}.min.{ext}.map" (its source map).
+        // Strip the known suffix rather than splitting on '.', so names with dots (e.g. "jquery.ui")
+        // resolve correctly.
+        string fileName = subpath[bundleDirectory.Length..];
+        string bundleSuffix = $".min.{Extension}";
+        string mapSuffix = $"{bundleSuffix}.map";
+
+        bool isMap = fileName.EndsWith(mapSuffix, StringComparison.Ordinal);
+        string? name = isMap
+            ? fileName[..^mapSuffix.Length]
+            : fileName.EndsWith(bundleSuffix, StringComparison.Ordinal) ? fileName[..^bundleSuffix.Length] : null;
+
+        if (name is null || !_bundles.TryGetValue(name, out T? bundle))
         {
             return new NotFoundFileInfo(subpath);
         }
 
-        if (subpath.EndsWith(".map", StringComparison.Ordinal))
+        if (isMap)
         {
             return bundle.SourceMap.Length > 0
                 ? new BundleFileInfo(bundle.Name, bundle.SourceMap, bundle.LastModified)

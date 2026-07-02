@@ -33,10 +33,11 @@
     <Compile Remove="SystemWeb\**\*.cs" />
   </ItemGroup>
 
-  <!-- net48: exclude all core files, include only SystemWeb files -->
+  <!-- net48: exclude all core files, include only SystemWeb files (plus shared, TFM-neutral types) -->
   <ItemGroup Condition="'$(TargetFramework)' == 'net48'">
     <Compile Remove="**\*.cs" />
     <Compile Include="SystemWeb\**\*.cs" />
+    <Compile Include="BundlingOptions.cs" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net10.0'">

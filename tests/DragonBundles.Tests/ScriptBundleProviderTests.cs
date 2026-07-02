@@ -3,6 +3,7 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.FileProviders;
 using NSubstitute;
+using NUglify.JavaScript;
 
 namespace DragonBundles.Tests;
 
@@ -13,13 +14,13 @@ public class ScriptBundleProviderTests : IDisposable
     public ScriptBundleProviderTests() => Directory.CreateDirectory(_webRoot);
     public void Dispose() => Directory.Delete(_webRoot, recursive: true);
 
-    ScriptBundleProvider MakeProvider(string envName)
+    ScriptBundleProvider MakeProvider(string envName, BundlingOptions? options = null)
     {
         IWebHostEnvironment? env = Substitute.For<IWebHostEnvironment>();
         env.EnvironmentName.Returns(envName);
         env.WebRootPath.Returns(_webRoot);
         env.WebRootFileProvider.Returns(new NullFileProvider());
-        return new ScriptBundleProvider(env);
+        return new ScriptBundleProvider(env, options ?? new BundlingOptions());
     }
 
     void WriteJsFile(string relativePath, string content)
@@ -207,6 +208,54 @@ public class ScriptBundleProviderTests : IDisposable
     {
         using Stream stream = fileInfo.CreateReadStream();
         return new StreamReader(stream).ReadToEnd();
+    }
+
+    [Fact]
+    public void Add_InProduction_PreservesImportantComments_WhenScriptSettingEnabled()
+    {
+        WriteJsFile("/js/app.js", "/*! license */\nfunction f() { return 1; }");
+        BundlingOptions options = new();
+        options.ScriptSettings.PreserveImportantComments = true;
+        ScriptBundleProvider provider = MakeProvider(Environments.Production, options);
+
+        provider.Add("app", "/js/app.js");
+
+        Assert.Contains("/*! license */", ReadFileInfo(provider.GetFileInfo("/bundles/js/app.min.js")));
+    }
+
+    [Fact]
+    public void Add_InProduction_StripsImportantComments_WhenScriptSettingDisabled()
+    {
+        WriteJsFile("/js/app.js", "/*! license */\nfunction f() { return 1; }");
+        BundlingOptions options = new();
+        options.ScriptSettings.PreserveImportantComments = false;
+        ScriptBundleProvider provider = MakeProvider(Environments.Production, options);
+
+        provider.Add("app", "/js/app.js");
+
+        Assert.DoesNotContain("/*! license */", ReadFileInfo(provider.GetFileInfo("/bundles/js/app.min.js")));
+    }
+
+    [Fact]
+    public void GetFileInfo_ResolvesBundleNameContainingDot()
+    {
+        WriteJsFile("/js/jquery.ui.js", "var x = 1;");
+        ScriptBundleProvider provider = MakeProvider(Environments.Production);
+
+        provider.Add("jquery.ui", "/js/jquery.ui.js");
+
+        Assert.True(provider.GetFileInfo("/bundles/js/jquery.ui.min.js").Exists);
+        Assert.True(provider.GetFileInfo("/bundles/js/jquery.ui.min.js.map").Exists);
+    }
+
+    [Fact]
+    public void GetFileInfo_ReturnsNotFound_ForUnrecognizedSuffix()
+    {
+        WriteJsFile("/js/app.js", "var x = 1;");
+        ScriptBundleProvider provider = MakeProvider(Environments.Production);
+        provider.Add("app", "/js/app.js");
+
+        Assert.False(provider.GetFileInfo("/bundles/js/app.js").Exists);
     }
 
     [Fact]
@@ -410,7 +459,7 @@ public class ScriptBundleProviderTests : IDisposable
         env.WebRootPath.Returns(_webRoot);
         env.WebRootFileProvider.Returns(fileProvider);
 
-        ScriptBundleProvider provider = new(env);
+        ScriptBundleProvider provider = new(env, new BundlingOptions());
         provider.Add("app", "/js/app.js");
 
         IFileInfo initial = provider.GetFileInfo("/bundles/js/app.min.js");

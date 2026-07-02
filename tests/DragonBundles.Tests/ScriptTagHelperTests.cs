@@ -25,7 +25,7 @@ public class ScriptTagHelperTests : IDisposable
         env.EnvironmentName.Returns(envName);
         env.WebRootPath.Returns(_webRoot);
 
-        ScriptBundleProvider provider = new(env);
+        ScriptBundleProvider provider = new(env, new BundlingOptions());
         if (sourceFiles.Length > 0)
         {
             provider.Add(bundleName, sourceFiles);

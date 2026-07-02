@@ -146,6 +146,38 @@ public class BundlingIntegrationTests(BundlingTestFixture fixture) : IClassFixtu
     }
 
     [Fact]
+    public async Task AddBundling_AppliesConfiguredScriptSettings_EndToEnd()
+    {
+        string webRoot = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+        Directory.CreateDirectory(webRoot);
+        Directory.CreateDirectory(Path.Combine(webRoot, "js"));
+        File.WriteAllText(Path.Combine(webRoot, "js", "app.js"), "/*! license */\nfunction f() { return 1; }");
+
+        WebApplicationBuilder builder = WebApplication.CreateBuilder(new WebApplicationOptions
+        {
+            EnvironmentName = Environments.Production,
+            WebRootPath = webRoot,
+        });
+        builder.WebHost.UseTestServer();
+        builder.Services.AddBundling(o => o.ScriptSettings.PreserveImportantComments = true);
+
+        await using WebApplication app = builder.Build();
+        app.UseBundling(bundles => bundles.AddScriptBundle("app", "/js/app.js"));
+        await app.StartAsync();
+
+        try
+        {
+            using HttpClient client = app.GetTestClient();
+            string content = await client.GetStringAsync("/bundles/js/app.min.js");
+            Assert.Contains("/*! license */", content);
+        }
+        finally
+        {
+            Directory.Delete(webRoot, recursive: true);
+        }
+    }
+
+    [Fact]
     public async Task StaticFile_IsStillServedViaCompositeProvider()
     {
         HttpResponseMessage response = await fixture.Client.GetAsync("/static.txt");

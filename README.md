@@ -63,6 +63,19 @@ In Razor views, add `@using DragonBundles` (or add it to `Web.config`), then:
 
 Dev/prod rendering is controlled by `BundleTable.EnableOptimizations` — individual files in debug, single bundle in release, matching standard `System.Web.Optimization` behavior.
 
+To control NUglify's output, call `ConfigureBundling` before registering bundles — the same
+global model as ASP.NET Core's `AddBundling`:
+
+```csharp
+using NUglify.Css;
+
+bundles.ConfigureBundling(o =>
+{
+    o.ScriptSettings.PreserveImportantComments = true;
+    o.StyleSettings.CommentMode = CssComment.None;
+});
+```
+
 ## asp.net core (.net 10)
 
 ### setup
@@ -128,6 +141,21 @@ bundles.AddStyleBundle("site", "/css/**/*.css");
 ```
 
 Missing source files throw `FileNotFoundException` at startup.
+
+### configuring minification
+
+Pass a callback to `AddBundling` to control NUglify's minification of all bundles via
+[`CodeSettings`](https://github.com/trullock/NUglify) (scripts) and `CssSettings` (styles):
+
+```csharp
+using NUglify.Css;
+
+builder.Services.AddBundling(o =>
+{
+    o.ScriptSettings.PreserveImportantComments = true;
+    o.StyleSettings.CommentMode = CssComment.None;
+});
+```
 
 ## requirements
 

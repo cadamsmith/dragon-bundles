@@ -25,7 +25,7 @@ public class StyleTagHelperTests : IDisposable
         env.EnvironmentName.Returns(envName);
         env.WebRootPath.Returns(_webRoot);
 
-        StyleBundleProvider provider = new(env);
+        StyleBundleProvider provider = new(env, new BundlingOptions());
         if (sourceFiles.Length > 0)
         {
             provider.Add(bundleName, sourceFiles);
